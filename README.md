@@ -9,7 +9,7 @@ A modern frontend/backend project with:
 
 ```
 .
-├── client/              # React frontend
+├── client/             # React frontend
 │   ├── src/
 │   │   ├── App.tsx     # React application
 │   │   └── index.tsx   # Entry point
@@ -20,9 +20,9 @@ A modern frontend/backend project with:
 │   ├── src/
 │   │   └── index.ts    # Express server
 │   └── dist/           # Compiled output
-└── shared/              # Shared types and utilities
-    ├── src/
-    │   └── index.ts    # Shared code
+└── shared/             # Shared types and utilities
+    ├── src/            # Shared entrypoint
+    │   └── index.ts 
     └── dist/           # Compiled output
 ```
 
@@ -77,3 +77,26 @@ This project demonstrates:
 - Express REST API
 - Shared code between frontend and backend
 - Proper module resolution
+
+## How to
+
+### Add new shared folder
+```json
+{
+  "exports": {
+    ".": "./dist/index.js",
+    "./constants": "./dist/constants/index.js",
+    "./NEW_ENDPOINT": "./dist/NEW_ENDPOINT/index.js",
+    "./package.json": "./package.json"
+  }
+}
+```
+### Create new structure
+```
+└── shared/              # Shared types and utilities
+    ├── src/
+    │   └── index.ts    
+    │── NEW_ENDPOINT/
+    │   └── index.ts    
+    └── dist/           # Compiled output
+```

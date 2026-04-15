@@ -16,7 +16,10 @@
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
     "start": "npm run start --workspace=server",
-    "prepare-dev": "npm install && cd ./server && npm install && cd .. && cd ./shared && npm run build && cd .. && cd ./client && npm install"
+    "prepare-dev": "npm install && cd ./server && npm install && cd .. && cd ./shared && npm run build && cd .. && cd ./client && npm install",
+    "clear": "npm run clear:node_modules && npm run clear:dist",
+    "clear:node_modules": "rm -rf ./node_modules && cd ./client && rm -rf ./node_modules && cd ../server && rm -rf ./node_modules",
+    "clear:dist": "rm -rf ./dist && cd ./client && rm -rf ./dist && cd ../server && rm -rf ./dist && cd ../shared && rm -rf ./dist"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

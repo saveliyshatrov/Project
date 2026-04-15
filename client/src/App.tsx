@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, formatUser, VERSION } from 'shared';
+import { AUTHOR } from 'shared/constants';
 
 const users: User[] = [
   { id: '1', name: 'John Doe', email: 'john@example.com' },
