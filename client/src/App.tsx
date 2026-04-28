@@ -1,6 +1,8 @@
 import React from 'react';
 import { User, formatUser, VERSION } from 'shared';
-import { AUTHOR } from 'shared/constants';
+import { CLIENT } from "./config";
+import {resolverExample} from "shared/resolver";
+import {ViewExample} from "./widget";
 
 const users: User[] = [
   { id: '1', name: 'John Doe', email: 'john@example.com' },
@@ -11,7 +13,8 @@ const users: User[] = [
 function UserList() {
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Module Federation App v{VERSION}</h1>
+      <h1>Module Federation App v{VERSION} | CLIENT:{JSON.stringify(CLIENT)}</h1>
+      <ViewExample example={777} />
       <h2>Users</h2>
       <ul>
         {users.map((user) => (

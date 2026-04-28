@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "webpack serve --mode development --config webpack.dev.config.js",
-    "build": "webpack --mode production --config webpack.prod.config.js",
+    "dev": "webpack serve --mode development --config webpack.dev.config.ts",
+    "build": "webpack --mode production --config webpack.prod.config.ts",
     "serve": "npx http-server dist -p 3000 --cors"
   },
   "dependencies": {

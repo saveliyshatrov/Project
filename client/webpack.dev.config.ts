@@ -1,5 +1,6 @@
-import path from 'path';
+import path from 'node:path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import webpack from "webpack";
 
 const __dirname = path.dirname(import.meta.url);
 
@@ -45,6 +46,11 @@ export default {
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/index.html',
+    }),
+    new webpack.DefinePlugin({
+      "process.env": {
+        CLIENT: JSON.stringify(true)
+      },
     }),
   ],
 };

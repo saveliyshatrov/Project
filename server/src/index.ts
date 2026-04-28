@@ -15,29 +15,25 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'OK', version: VERSION });
 });
 
+const users: User[] = [
+  { id: '1', name: 'John Doe', email: 'john@example.com' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+  { id: '3', name: 'Bob Wilson', email: 'bob@example.com' },
+];
+
 // Get all users
 app.get('/users', (req: Request, res: Response) => {
-  const users: User[] = [
-    { id: '1', name: 'John Doe', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-    { id: '3', name: 'Bob Wilson', email: 'bob@example.com' },
-  ];
   res.json({
-    success: true,
-    data: users.map(formatUser),
+    users
   });
 });
 
 // Get single user
 app.get('/users/:id', (req: Request, res: Response) => {
   const userId = req.params.id;
-  const user = {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-  };
+  const user = users.find(user => user.id === userId)
 
-  if (userId === user.id) {
+  if (user) {
     res.json({
       success: true,
       data: formatUser(user),

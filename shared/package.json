@@ -6,6 +6,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./constants": "./dist/constants/index.js",
+    "./resolver": "./dist/resolver/index.js",
     "./package.json": "./package.json"
   },
   "scripts": {

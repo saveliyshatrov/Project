@@ -1,17 +1,16 @@
-import path from 'path';
+import path from 'node:path';
+import { DefinePlugin, ProvidePlugin, EnvironmentPlugin } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 
-const __dirname = path.dirname(import.meta.url);
+const isDev = process.env.NODE_ENV === 'development';
 
-export default {
-  mode: 'production',
-  target: 'web',
+module.exports = {
+  mode: isDev ? 'development' : 'production',
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'js/[name].[contenthash].js',
+    filename: isDev ? '[name].js[contenthash].js' : 'js/[name].[contenthash].js',
     clean: true,
-    publicPath: '/dist/',
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
@@ -23,7 +22,7 @@ export default {
         loader: 'ts-loader',
         exclude: /node_modules/,
         options: {
-          transpileOnly: false,
+          transpileOnly: isDev,
         },
       },
       {
