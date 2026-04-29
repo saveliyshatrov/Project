@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from "react";
-import {CollectionState, updateCollection} from "../store/collectionsSlice";
+import {CollectionState, updateCollection} from "@store/collectionsSlice";
 import {useDispatch} from "react-redux";
 import {JSX} from "react/jsx-runtime";
 import IntrinsicAttributes = JSX.IntrinsicAttributes;
@@ -33,6 +33,9 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
         useEffect(() => {
             controller(props)
                 .then((result) => {
+                    console.log({
+                        result
+                    })
                     if (!result) {
                         setShowNothing(true);
                         return;
@@ -42,7 +45,10 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
                     collections && dispatch(updateCollection(collections));
                     setShowSkeleton(false);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.log({
+                        error
+                    })
                     setShowSkeleton(false);
                     setShowNothing(true);
                 })
@@ -63,32 +69,3 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
         )
     })
 }
-
-type ViiiewProps = {
-    name: string,
-    example: number
-}
-
-const Viiiew: React.FC<ViiiewProps> = ({ name, example }) => {
-    return <div>name:{name} | example:{example}</div>
-}
-
-export const ViewExample = createWidget({
-    view: Viiiew,
-    controller: async ({ example }: { example: number }) => {
-        const name = await new Promise(res => setTimeout(() => res('Test name'), 5000)) as string;
-        return {
-            data: {
-                example,
-                name
-            },
-            collections: {
-                someCollection: {
-                    name: 'NAME',
-                    age: 999
-                }
-            }
-        }
-    },
-    skeleton: () => (<div>---------</div>),
-})

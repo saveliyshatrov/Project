@@ -1,8 +1,7 @@
 import React from 'react';
 import { User, formatUser, VERSION } from 'shared';
-import { CLIENT } from "./config";
-import {resolverExample} from "shared/resolver";
-import {ViewExample} from "./widget";
+import { CLIENT } from "@config";
+import { ViewExample } from "@widget/example";
 
 const users: User[] = [
   { id: '1', name: 'John Doe', email: 'john@example.com' },

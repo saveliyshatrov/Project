@@ -1,6 +1,7 @@
 import path from 'node:path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from "webpack";
+import {TsconfigPathsPlugin} from "tsconfig-paths-webpack-plugin";
 
 const __dirname = path.dirname(import.meta.url);
 
@@ -16,6 +17,9 @@ export default {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
+    plugins: [
+      new TsconfigPathsPlugin()
+    ],
   },
   devServer: {
     port: 3000,

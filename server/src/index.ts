@@ -6,8 +6,15 @@ import path from 'path';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const whiteList = {
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: 'Content-Type,Authorization'
+}
+
 // Middleware
-app.use(cors());
+
+app.use(cors(whiteList));
 app.use(express.json());
 
 // Health check
@@ -23,9 +30,7 @@ const users: User[] = [
 
 // Get all users
 app.get('/users', (req: Request, res: Response) => {
-  res.json({
-    users
-  });
+  res.json(users);
 });
 
 // Get single user
