@@ -7,10 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const whiteList = {
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST'],
-  allowedHeaders: 'Content-Type,Authorization'
-}
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    allowedHeaders: 'Content-Type,Authorization',
+};
 
 // Middleware
 
@@ -19,51 +19,51 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'OK', version: VERSION });
+    res.json({ status: 'OK', version: VERSION });
 });
 
 const users: User[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', name: 'Bob Wilson', email: 'bob@example.com' },
+    { id: '1', name: 'John Doe', email: 'john@example.com' },
+    { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+    { id: '3', name: 'Bob Wilson', email: 'bob@example.com' },
 ];
 
 // Get all users
 app.get('/users', (req: Request, res: Response) => {
-  res.json(users);
+    res.json(users);
 });
 
 // Get single user
 app.get('/users/:id', (req: Request, res: Response) => {
-  const userId = req.params.id;
-  const user = users.find(user => user.id === userId)
+    const userId = req.params.id;
+    const user = users.find((user) => user.id === userId);
 
-  if (user) {
-    res.json({
-      success: true,
-      data: formatUser(user),
-    });
-  } else {
-    res.status(404).json({
-      success: false,
-      error: 'User not found',
-    });
-  }
+    if (user) {
+        res.json({
+            success: true,
+            data: formatUser(user),
+        });
+    } else {
+        res.status(404).json({
+            success: false,
+            error: 'User not found',
+        });
+    }
 });
 
 // Create user
 app.post('/users', (req: Request, res: Response) => {
-  const { name, email } = req.body;
-  const newUser: User = {
-    id: Date.now().toString(),
-    name,
-    email,
-  };
+    const { name, email } = req.body;
+    const newUser: User = {
+        id: Date.now().toString(),
+        name,
+        email,
+    };
 
-  res.status(201).json({
-    success: true,
-    data: formatUser(newUser),
-  });
+    res.status(201).json({
+        success: true,
+        data: formatUser(newUser),
+    });
 });
 
 // Serve static files from client dist
@@ -71,13 +71,13 @@ app.use(express.static(path.join(__dirname, '../../client/dist')));
 
 // Fallback to index.html for React Router
 app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📦 Version: ${VERSION}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📦 Version: ${VERSION}`);
 });
 
 export default app;

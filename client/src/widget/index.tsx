@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {CollectionState, updateCollection} from "@store/collectionsSlice";
 import {useDispatch} from "react-redux";
 import {JSX} from "react/jsx-runtime";
@@ -17,7 +17,7 @@ type WidgetParams
         data?: ComponentProps,
         collections?: collectionsProps
     } | null>,
-    skeleton?: React.ComponentType<{}>
+    skeleton?: React.ComponentType<unknown>
 };
 
 type IncomingProps<ComponentProps, DataProps, collectionsProps = CollectionState> =
@@ -25,7 +25,7 @@ type IncomingProps<ComponentProps, DataProps, collectionsProps = CollectionState
 
 export const createWidget = <ComponentProps, DataProps, collectionsProps = CollectionState>
 ({ view: View, skeleton: Skeleton, controller }: WidgetParams<ComponentProps, DataProps, collectionsProps>) => {
-    return ((props: IncomingProps<ComponentProps, DataProps, collectionsProps>) => {
+    const Component = (props: IncomingProps<ComponentProps, DataProps, collectionsProps>) => {
         const [showSkeleton, setShowSkeleton] = useState(true);
         const [showNothing, setShowNothing] = useState(false);
         const dispatch = useDispatch();
@@ -41,8 +41,14 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
                         return;
                     }
                     const { data, collections } = result;
-                    data && setComponentControllerProps(data);
-                    collections && dispatch(updateCollection(collections));
+
+                    if (data) {
+                        setComponentControllerProps(data);
+                    }
+
+                    if (collections) {
+                        dispatch(updateCollection(collections));
+                    }
                     setShowSkeleton(false);
                 })
                 .catch((error) => {
@@ -67,5 +73,9 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
                 { ...(componentControllerProps as React.ComponentProps<typeof View> & IntrinsicAttributes) }
             />
         )
-    })
+    }
+
+    Component.displayName = `widget-${View.displayName}`
+
+    return Component;
 }

@@ -1,60 +1,58 @@
 import path from 'node:path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack from "webpack";
-import {TsconfigPathsPlugin} from "tsconfig-paths-webpack-plugin";
+import webpack from 'webpack';
+import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 
 const __dirname = path.dirname(import.meta.url);
 
 export default {
-  mode: 'development',
-  target: 'web',
-  entry: './src/index.tsx',
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'js/[name].js[contenthash].js',
-    clean: true,
-    publicPath: 'auto',
-  },
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
-    plugins: [
-      new TsconfigPathsPlugin()
-    ],
-  },
-  devServer: {
-    port: 3000,
-    hot: true,
-    liveReload: true,
-    historyApiFallback: true,
-    static: './public',
-    headers: {
-      'Access-Control-Allow-Origin': '*',
+    mode: 'development',
+    target: 'web',
+    entry: './src/index.tsx',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'js/[name].js[contenthash].js',
+        clean: true,
+        publicPath: 'auto',
     },
-  },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        exclude: /node_modules/,
-        options: {
-          transpileOnly: true,
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
+        plugins: [new TsconfigPathsPlugin()],
+    },
+    devServer: {
+        port: 3000,
+        hot: true,
+        liveReload: true,
+        historyApiFallback: true,
+        static: './public',
+        headers: {
+            'Access-Control-Allow-Origin': '*',
         },
-      },
-      {
-        test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
-      },
+    },
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                loader: 'ts-loader',
+                exclude: /node_modules/,
+                options: {
+                    transpileOnly: true,
+                },
+            },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader'],
+            },
+        ],
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: './public/index.html',
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                CLIENT: JSON.stringify(true),
+            },
+        }),
     ],
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: './public/index.html',
-    }),
-    new webpack.DefinePlugin({
-      "process.env": {
-        CLIENT: JSON.stringify(true)
-      },
-    }),
-  ],
 };

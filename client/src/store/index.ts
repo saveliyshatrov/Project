@@ -1,13 +1,11 @@
-import { configureStore } from '@reduxjs/toolkit'
-import { reducer as CollectionsReducer } from "./collectionsSlice";
+import { configureStore } from '@reduxjs/toolkit';
+import { reducer as CollectionsReducer } from './collectionsSlice';
 
 export const store = configureStore({
     reducer: {
-        collections: CollectionsReducer
+        collections: CollectionsReducer,
     },
 });
-
-
 
 export type RootState = ReturnType<typeof store.getState>;
 
