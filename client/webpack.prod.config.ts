@@ -2,22 +2,31 @@ import path from 'node:path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-export default {
+const Config: webpack.Configuration = {
     mode: 'production',
     target: 'web',
-    entry: './src/index.tsx',
+    entry: {
+        index: './src/index.tsx',
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'js/[name].[contenthash].js',
+        filename: '[name].[contenthash].js',
         clean: true,
         publicPath: '/dist/',
     },
-
+    optimization: {
+        runtimeChunk: 'single',
+        splitChunks: {
+            chunks: 'all',
+        },
+    },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
         plugins: [new TsconfigPathsPlugin()],
     },
     module: {
@@ -38,6 +47,7 @@ export default {
     },
     plugins: [
         new HtmlWebpackPlugin({
+            title: 'Project',
             template: './public/index.html',
         }),
         new webpack.DefinePlugin({
@@ -47,3 +57,5 @@ export default {
         }),
     ],
 };
+
+export default Config;

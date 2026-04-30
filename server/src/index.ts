@@ -69,6 +69,11 @@ app.post('/users', (req: Request, res: Response) => {
 // Serve static files from client dist
 app.use(express.static(path.join(__dirname, '../../client/dist')));
 
+// Prod chunks sending
+app.get('/dist/*', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, `../../client${req.url}`));
+});
+
 // Fallback to index.html for React Router
 app.get('*', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
