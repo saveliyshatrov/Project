@@ -1,102 +1,101 @@
 # React + TypeScript + Webpack + Express Monorepo
 
-A modern frontend/backend project with:
-- **Frontend**: React 18 + TypeScript + Webpack
-- **Backend**: Express + TypeScript
-- **Shared modules**: Type-safe shared code between frontend and backend
+Full-stack monorepo with shared type-safe code between a React frontend and Express backend.
 
-## Structure
+- **Client**: React 18 + Redux Toolkit + Webpack 5 (port 3000)
+- **Server**: Express + ts-node-dev (port 3001)
+- **Shared**: Platform-specific builds — `*.client.ts` → `dist/client/` (ESM), `*.server.ts` → `dist/server/` (CJS)
 
-```
-.
-├── client/             # React frontend
-│   ├── src/
-│   │   ├── App.tsx     # React application
-│   │   └── index.tsx   # Entry point
-│   ├── public/
-│   │   └── index.html  # HTML template
-│   └── webpack.*.config.js
-├── server/              # Express backend
-│   ├── src/
-│   │   └── index.ts    # Express server
-│   └── dist/           # Compiled output
-└── shared/             # Shared types and utilities
-    ├── src/            # Shared entrypoint
-    │   └── index.ts 
-    └── dist/           # Compiled output
-```
-
-## Getting Started
+## Quick Start
 
 ```bash
-# Install dependencies and configure project
+# 1. Install and set up
 npm run prepare-dev
 
-# Start development servers
+# 2. Start dev servers
 npm run dev
 ```
 
-This will start:
-- **Frontend**: http://localhost:3000
-- **Backend**: http://localhost:3001
-
-## Available Scripts
-
-```bash
-npm run dev          # Start both dev servers
-npm run build        # Build all packages
-npm run build:client # Build only client
-npm run build:server # Build only server
-npm start            # Start production server
-```
-
-## Features
-
-- ✅ TypeScript with strict mode
-- ✅ Hot reload in development
-- ✅ Webpack bundling
-- ✅ Shared modules with proper dependency resolution
-- ✅ Express API endpoints
-- ✅ CORS enabled
-- ✅ RESTful API with user CRUD operations
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:3001 |
 
 ## API Endpoints
 
-### Backend (http://localhost:3001)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `GET` | `/users` | Get all users |
+| `GET` | `/users/:id` | Get user by ID |
+| `POST` | `/users` | Create user `{ name, email }` |
 
-- `GET /health` - Health check
-- `GET /users` - Get all users
-- `GET /users/:id` - Get single user
-- `POST /users` - Create new user
+## Scripts
 
-## Notes
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start all dev servers concurrently |
+| `npm run build` | Build all packages |
+| `npm run build:client` | Build client only |
+| `npm run build:server` | Build server only |
+| `npm start` | Run production server |
+| `npm run clear` | Remove all `node_modules` and `dist` |
 
-This project demonstrates:
-- Modern TypeScript configuration
-- Webpack development workflow
-- Express REST API
-- Shared code between frontend and backend
-- Proper module resolution
+## Debugging
 
-## How to
+### Client
 
-### Add new shared folder
-```json
-{
-  "exports": {
-    ".": "./dist/index.js",
-    "./constants": "./dist/constants/index.js",
-    "./NEW_ENDPOINT": "./dist/NEW_ENDPOINT/index.js",
-    "./package.json": "./package.json"
-  }
-}
+- Webpack dev server runs on port 3000 with HMR and source maps
+- Open browser DevTools → Sources to debug TypeScript directly
+- Check console for `CLIENT=true` flag verification
+
+### Server
+
+```bash
+# Run with debugger
+node --inspect dist/index.js
+
+# Or use ts-node-dev with inspect
+npx ts-node-dev --inspect --respawn --transpile-only src/index.ts
 ```
-### Create new structure
+
+Attach via Chrome DevTools (`chrome://inspect`) or your IDE.
+
+### Shared Package
+
+```bash
+# Rebuild shared only
+npm run build --workspace=shared
+
+# Watch mode for live changes
+npm run dev --workspace=shared
 ```
-└── shared/              # Shared types and utilities
-    ├── src/
-    │   └── index.ts    
-    │── NEW_ENDPOINT/
-    │   └── index.ts    
-    └── dist/           # Compiled output
+
+Verify platform outputs:
+```bash
+cat shared/dist/client/constants/index.js    # ESM (client)
+cat shared/dist/server/constants/index.cjs   # CJS (server)
 ```
+
+## Adding Shared Code
+
+| File naming | Goes to | Description |
+|-------------|---------|-------------|
+| `*.ts` | Both `client` + `server` | Shared code |
+| `*.client.ts` | `dist/client/` only | Browser-only code |
+| `*.server.ts` | `dist/server/` only | Node.js-only code |
+
+After creating files, rebuild shared:
+```bash
+npm run build --workspace=shared
+```
+
+Then import in client or server:
+```typescript
+import { User, formatUser } from 'shared/constants';
+import { resolverExample } from 'shared/resolver';
+```
+
+## Full Documentation
+
+See [DOCUMENTATION.md](./DOCUMENTATION.md) for detailed architecture, build system, widget system, resolver system, and development workflow.
