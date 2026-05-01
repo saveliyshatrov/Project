@@ -2,15 +2,17 @@
   "name": "shared",
   "version": "1.0.0",
   "main": "dist/server/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/server/index.d.ts",
   "type": "module",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
+      "types": "./dist/client/index.d.ts",
+      "client": "./dist/client/index.js",
+      "server": "./dist/server/index.js",
+      "default": "./dist/client/index.js"
     },
     "./client": {
       "types": "./dist/client/index.d.ts",
@@ -20,26 +22,34 @@
       "types": "./dist/server/index.d.ts",
       "default": "./dist/server/index.js"
     },
-    "./constants": "./dist/client/constants/index.js",
-    "./resolver": "./dist/client/resolver/index.js",
-    "./resolver/*": "./dist/client/resolver/*.js"
+    "./constants": {
+      "types": "./dist/client/constants/index.d.ts",
+      "client": "./dist/client/constants/index.js",
+      "server": "./dist/server/constants/index.js",
+      "default": "./dist/client/constants/index.js"
+    },
+    "./resolver": {
+      "types": "./dist/client/resolver/index.d.ts",
+      "client": "./dist/client/resolver/index.js",
+      "server": "./dist/server/resolver/index.js",
+      "default": "./dist/client/resolver/index.js"
+    },
+    "./resolver/*": {
+      "types": "./dist/client/resolver/*.d.ts",
+      "default": "./dist/client/resolver/*.js"
+    }
   },
   "scripts": {
-    "build": "npm run clean && webpack",
-    "build:client": "npm run clean && webpack --env target=client",
-    "build:server": "npm run clean && webpack --env target=server",
+    "build": "npm run clean && webpack && npm run build:types",
+    "build:client": "npm run clean && webpack --env target=client && npm run build:types",
+    "build:server": "npm run clean && webpack --env target=server && npm run build:types",
+    "build:types": "node scripts/distribute-types.mjs",
     "dev": "webpack --watch",
     "clean": "rimraf dist"
   },
-  "dependencies": {
-    "nodemon": "^3.1.14"
-  },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@types/webpack": "^5.28.5",
-    "copy-webpack-plugin": "^14.0.0",
     "glob": "^13.0.6",
-    "package-json-from-dist": "^1.0.1",
     "rimraf": "^6.1.3",
     "ts-loader": "^9.5.7",
     "typescript": "^6.0.3",

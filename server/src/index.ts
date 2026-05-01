@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { formatUser, User, VERSION } from 'shared';
+import { NAME } from 'shared/resolver/examples';
 import path from 'path';
 
 const app = express();
@@ -23,7 +24,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 const users: User[] = [
-    { id: '1', name: 'John Doe', email: 'john@example.com' },
+    { id: '1', name: NAME, email: 'john@example.com' },
     { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
     { id: '3', name: 'Bob Wilson', email: 'bob@example.com' },
 ];

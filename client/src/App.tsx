@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, formatUser, VERSION } from 'shared/constants';
+import { NAME } from 'shared/resolver/examples';
 import { CLIENT } from '@config';
 import { ViewExample } from '@widget/example';
 
@@ -13,7 +14,7 @@ function UserList() {
     return (
         <div style={{ padding: '20px' }}>
             <h1>
-                Module Federation App v{VERSION} | CLIENT:{JSON.stringify(CLIENT)}
+                Module Federation App v{VERSION} | CLIENT:{JSON.stringify(CLIENT)} | NAME:{NAME}
             </h1>
             <ViewExample example={777} />
             <h2>Users</h2>

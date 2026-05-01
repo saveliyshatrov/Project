@@ -1,4 +1,4 @@
-import { Collections, CollectionState } from './normalize';
+import { Collections, CollectionState } from './normalize.js';
 
 type ResolverOptions = {
     name: string;

@@ -8,14 +8,15 @@
     "lib": ["ES2020"],
     "esModuleInterop": true,
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
     "paths": {
       "shared": [
-        "./../shared/dist/server"
+        "../shared"
       ],
       "shared/*": [
-        "./../shared/dist/server/*"
+        "../shared/dist/*"
       ],
-      "@*": ["*"]
+      "@*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

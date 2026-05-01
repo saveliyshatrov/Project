@@ -1,8 +1,6 @@
 import path from 'path';
-import fs from 'fs';
 import { glob } from 'glob';
 import type { Configuration } from 'webpack';
-import CopyPlugin from 'copy-webpack-plugin';
 import { fileURLToPath } from 'node:url';
 
 interface Env {
@@ -16,39 +14,24 @@ function getEntries(target: 'client' | 'server'): Record<string, string> {
     const srcDir = path.resolve(__dirname, 'src');
     const entries: Record<string, string> = {};
 
-    console.log(`\n🔍 Scanning for ${target} files...`);
-
-    // Shared files (no .client or .server suffix)
-    const shared = glob.sync('**/*.{ts,tsx}', {
-        cwd: srcDir,
-        ignore: ['**/*.d.ts', '**/node_modules/**', '**/*.client.{ts,tsx}', '**/*.server.{ts,tsx}'],
-    });
-
-    // Platform specific files
-    const specificPattern = target === 'client' ? '**/*.client.{ts,tsx}' : '**/*.server.{ts,tsx}';
-
-    const specific = glob.sync(specificPattern, {
+    const allFiles = glob.sync('**/*.{ts,tsx}', {
         cwd: srcDir,
         ignore: ['**/*.d.ts', '**/node_modules/**'],
     });
 
-    const allFiles = [...shared, ...specific];
+    for (const file of allFiles) {
+        const isClientFile = /\.client\.(ts|tsx)$/.test(file);
+        const isServerFile = /\.server\.(ts|tsx)$/.test(file);
 
-    console.log(`   Found ${allFiles.length} total files`);
+        if (target === 'client' && isServerFile) continue;
+        if (target === 'server' && isClientFile) continue;
 
-    allFiles.forEach((file) => {
         let name = file
             .replace(/\.client\.(ts|tsx)$/, '')
             .replace(/\.server\.(ts|tsx)$/, '')
-            .replace(/\.ts$/, '')
-            .replace(/\.tsx$/, '');
+            .replace(/\.tsx?$/, '');
 
         entries[name] = `./src/${file}`;
-        console.log(`   ✓ ${file}  →  ${name}`);
-    });
-
-    if (Object.keys(entries).length === 0) {
-        console.warn(`⚠️  WARNING: No entries found for ${target}!`);
     }
 
     return entries;
@@ -57,8 +40,6 @@ function getEntries(target: 'client' | 'server'): Record<string, string> {
 const createConfig = (target: 'client' | 'server'): Configuration => {
     const entries = getEntries(target);
     const isClient = target === 'client';
-
-    console.log(`\n🚀 Building ${target.toUpperCase()} with ${Object.keys(entries).length} entries`);
 
     return {
         name: target,
@@ -72,7 +53,14 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
         output: {
             path: path.resolve(__dirname, `dist/${target}`),
             filename: '[name].js',
+            library: {
+                type: isClient ? 'module' : 'commonjs2',
+            },
             clean: true,
+        },
+
+        experiments: {
+            outputModule: true,
         },
 
         optimization: {
@@ -89,45 +77,18 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
             rules: [
                 {
                     test: /\.tsx?$/,
-                    use: 'ts-loader',
+                    use: {
+                        loader: 'ts-loader',
+                        options: {
+                            transpileOnly: true,
+                        },
+                    },
                     exclude: /node_modules/,
                 },
             ],
         },
 
-        plugins: [
-            ,
-            new CopyPlugin({
-                patterns: [
-                    {
-                        from: path.resolve(__dirname, 'src', target === 'client' ? 'client' : 'server'),
-                        to: '.',
-                        noErrorOnMissing: true,
-                    },
-                    // Generate package.json in dist/client and dist/server
-                    {
-                        from: path.resolve(__dirname, 'package.json'),
-                        to: 'package.json',
-                        transform(content) {
-                            const pkg = JSON.parse(content.toString());
-
-                            return JSON.stringify(
-                                {
-                                    name: `${pkg.name}`,
-                                    version: pkg.version,
-                                    main: 'index.js',
-                                    types: '../index.d.ts',
-                                    type: 'commonjs',
-                                    private: true,
-                                },
-                                null,
-                                2
-                            );
-                        },
-                    },
-                ],
-            }),
-        ],
+        externalsPresets: isClient ? {} : { node: true },
 
         ...(!isClient && {
             externals: [
@@ -143,8 +104,6 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
 };
 
 export default (env: Env = {}): Configuration | Configuration[] => {
-    console.log('Webpack started with env:', env);
-
     if (env.target === 'client') return createConfig('client');
     if (env.target === 'server') return createConfig('server');
 
