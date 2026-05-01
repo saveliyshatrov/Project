@@ -11,10 +11,10 @@
     "baseUrl": ".",
     "paths": {
       "shared": [
-        "../shared"
+        "../shared/dist/server/index.cjs"
       ],
       "shared/*": [
-        "../shared/dist/*"
+        "../shared/dist/server/*"
       ],
       "@*": ["src/*"]
     }

@@ -9,9 +9,9 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/client/index.d.ts",
-      "client": "./dist/client/index.js",
-      "server": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/client/index.js",
+      "require": "./dist/server/index.cjs",
       "default": "./dist/client/index.js"
     },
     "./client": {
@@ -20,23 +20,25 @@
     },
     "./server": {
       "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
+      "default": "./dist/server/index.cjs"
     },
     "./constants": {
-      "types": "./dist/client/constants/index.d.ts",
-      "client": "./dist/client/constants/index.js",
-      "server": "./dist/server/constants/index.js",
+      "types": "./dist/server/constants/index.d.ts",
+      "import": "./dist/client/constants/index.js",
+      "require": "./dist/server/constants/index.cjs",
       "default": "./dist/client/constants/index.js"
     },
     "./resolver": {
-      "types": "./dist/client/resolver/index.d.ts",
-      "client": "./dist/client/resolver/index.js",
-      "server": "./dist/server/resolver/index.js",
+      "types": "./dist/server/resolver/index.d.ts",
+      "import": "./dist/client/resolver/index.js",
+      "require": "./dist/server/resolver/index.cjs",
       "default": "./dist/client/resolver/index.js"
     },
     "./resolver/*": {
-      "types": "./dist/client/resolver/*.d.ts",
-      "default": "./dist/client/resolver/*.js"
+      "types": "./dist/server/resolver/*.d.ts",
+      "import": "./dist/client/resolver/*.js",
+      "require": "./dist/server/resolver/*.cjs",
+      "default": "./dist/server/resolver/*.cjs"
     }
   },
   "scripts": {

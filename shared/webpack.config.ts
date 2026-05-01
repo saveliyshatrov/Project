@@ -52,7 +52,7 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
 
         output: {
             path: path.resolve(__dirname, `dist/${target}`),
-            filename: '[name].js',
+            filename: isClient ? '[name].js' : '[name].cjs',
             library: {
                 type: isClient ? 'module' : 'commonjs2',
             },
