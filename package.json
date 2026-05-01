@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "shared": "^1.0.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
@@ -32,6 +31,7 @@
     "@types/redux-thunk": "^2.1.32",
     "react-redux": "^9.2.0",
     "redux-thunk": "^3.1.0",
-    "tsconfig-paths-webpack-plugin": "^4.2.0"
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
+    "webpack-cli": "^7.0.2"
   }
 }

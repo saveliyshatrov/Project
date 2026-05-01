@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, formatUser, VERSION } from 'shared';
+import { User, formatUser, VERSION } from 'shared/constants';
 import { CLIENT } from '@config';
 import { ViewExample } from '@widget/example';
 
