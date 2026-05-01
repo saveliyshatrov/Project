@@ -5,6 +5,12 @@ import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 
 const __dirname = path.dirname(import.meta.url);
 
+console.log({
+    path: path.resolve(__dirname),
+    path_2: path.resolve(__dirname, './../shared/dist/client'),
+    dist: path.resolve(__dirname, 'dist'),
+});
+
 export default {
     mode: 'development',
     target: 'web',
@@ -18,6 +24,12 @@ export default {
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
         plugins: [new TsconfigPathsPlugin()],
+        // tsconfig: true,
+        // symlinks: false,
+        modules: [path.resolve(__dirname, '../shared/dist/client'), 'node_modules'],
+        // alias: {
+        //     shared: path.resolve(__dirname, '../shared/dist/client'),
+        // },
     },
     devServer: {
         port: 3000,

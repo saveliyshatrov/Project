@@ -6,7 +6,10 @@
     "rootDir": "./src",
     "paths": {
       "shared": [
-        "../../shared/dist/"
+        "../../shared/dist/client"
+      ],
+      "shared/*": [
+        "../../shared/dist/client/*"
       ],
       "@*": ["*"]
     }

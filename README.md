@@ -29,8 +29,8 @@ A modern frontend/backend project with:
 ## Getting Started
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies and configure project
+npm run prepare-dev
 
 # Start development servers
 npm run dev
