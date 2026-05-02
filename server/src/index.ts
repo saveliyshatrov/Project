@@ -1,8 +1,10 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import { formatUser, User, VERSION } from 'shared';
 import { NAME } from 'shared/resolver/examples';
 import { RegisterRequest, AuthResponse } from 'shared/auth';
+import { swaggerSpec } from './swagger';
 import path from 'path';
 
 const app = express();
@@ -24,6 +26,83 @@ app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'OK', version: VERSION });
 });
 
+// Swagger docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     tags: [Health]
+ *     summary: Health check
+ *     responses:
+ *       200:
+ *         description: Server is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: OK
+ *                 version:
+ *                   type: string
+ *                   example: 1.0.0
+ */
+
+// Health check
+app.get('/health', (req: Request, res: Response) => {
+    res.json({ status: 'OK', version: VERSION });
+});
+
+/**
+ * @openapi
+ * tags:
+ *   - name: Users
+ *     description: User management
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required: [id, name, email]
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *     RegisterRequest:
+ *       type: object
+ *       required: [name, email, password]
+ *       properties:
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *         password:
+ *           type: string
+ *           minLength: 6
+ */
+
+/**
+ * @openapi
+ * /users:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get all users
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ */
+
 const users: User[] = [
     { id: '1', name: NAME, email: 'john@example.com' },
     { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
@@ -34,6 +113,43 @@ const users: User[] = [
 app.get('/users', (req: Request, res: Response) => {
     res.json(users);
 });
+
+/**
+ * @openapi
+ * /users/{id}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: string
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 error:
+ *                   type: string
+ */
 
 // Get single user
 app.get('/users/:id', (req: Request, res: Response) => {
@@ -52,6 +168,36 @@ app.get('/users/:id', (req: Request, res: Response) => {
         });
     }
 });
+
+/**
+ * @openapi
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: User already exists
+ */
 
 // Register
 app.post('/auth/register', (req: Request, res: Response) => {
@@ -95,6 +241,38 @@ app.post('/auth/register', (req: Request, res: Response) => {
         user: newUser,
     } satisfies AuthResponse);
 });
+
+/**
+ * @openapi
+ * /users:
+ *   post:
+ *     tags: [Users]
+ *     summary: Create a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: string
+ */
 
 // Create user
 app.post('/users', (req: Request, res: Response) => {
