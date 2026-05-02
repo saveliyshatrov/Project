@@ -9,7 +9,6 @@ import swaggerUi from 'swagger-ui-express';
 
 import { swaggerSpec } from './swagger';
 
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 

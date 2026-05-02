@@ -62,14 +62,7 @@ export default [
             'import/order': [
                 'error',
                 {
-                    groups: [
-                        'builtin',
-                        'external',
-                        'internal',
-                        'parent',
-                        'sibling',
-                        'index',
-                    ],
+                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
                     'newlines-between': 'always',
                     alphabetize: {
                         order: 'asc',
@@ -82,12 +75,6 @@ export default [
         },
     },
     {
-        ignores: [
-            '**/dist/**',
-            '**/node_modules/**',
-            '**/*.d.ts',
-            'shared/scripts/**',
-            '**/package-lock.json',
-        ],
+        ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', 'shared/scripts/**', '**/package-lock.json'],
     },
 ];

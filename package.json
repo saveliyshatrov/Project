@@ -18,10 +18,20 @@
         "build:server": "npm run build --workspace=server",
         "start": "npm run start --workspace=server",
         "clear": "rm -rf ./node_modules ./client/node_modules ./server/node_modules ./shared/node_modules ./client/dist ./server/dist ./shared/dist",
+        "prepare": "husky",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier --write \"**/*.{js,mjs,cjs,ts,jsx,tsx,json,css}\"",
         "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,jsx,tsx,json,css}\""
+    },
+    "lint-staged": {
+        "*.{js,mjs,cjs,ts,jsx,tsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,css}": [
+            "prettier --write"
+        ]
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.5",

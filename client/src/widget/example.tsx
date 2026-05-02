@@ -4,7 +4,6 @@ import { resolverExample } from 'shared/resolver';
 
 import { createWidget } from './index';
 
-
 type ViewProps = {
     name: string;
     example: number;
