@@ -1,4 +1,4 @@
-import { Collections, CollectionState } from './normalize.js';
+import { Collections } from './normalize.js';
 
 type ResolverOptions = {
     name: string;
@@ -21,7 +21,7 @@ type Runner<Params, CollectionType> = (
     ? ReturnType<Func<Params, CollectionType>>
     : Promisable<ReturnType<Func<Params, CollectionType>>>;
 
-type ArgFunc<Params, CollectionType> = (
+type _ArgFunc<Params, CollectionType> = (
     callback: Func<Params, CollectionType>,
     options: ResolverOptions
 ) => Runner<Params, CollectionType>;

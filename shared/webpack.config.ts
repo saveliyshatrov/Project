@@ -1,7 +1,8 @@
+import { fileURLToPath } from 'node:url';
 import path from 'path';
+
 import { glob } from 'glob';
 import type { Configuration } from 'webpack';
-import { fileURLToPath } from 'node:url';
 
 interface Env {
     target?: 'client' | 'server';
@@ -26,7 +27,7 @@ function getEntries(target: 'client' | 'server'): Record<string, string> {
         if (target === 'client' && isServerFile) continue;
         if (target === 'server' && isClientFile) continue;
 
-        let name = file
+        const name = file
             .replace(/\.client\.(ts|tsx)$/, '')
             .replace(/\.server\.(ts|tsx)$/, '')
             .replace(/\.tsx?$/, '');

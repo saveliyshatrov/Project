@@ -1,7 +1,8 @@
 import path from 'node:path';
+
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack from 'webpack';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
+import webpack from 'webpack';
 
 const __dirname = path.dirname(import.meta.url);
 

@@ -1,37 +1,43 @@
 {
-  "name": "project",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "client",
-    "server",
-    "shared"
-  ],
-  "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:shared\"",
-    "dev:client": "npm run dev --workspace=client",
-    "dev:server": "npm run dev --workspace=server",
-    "dev:shared": "npm run dev --workspace=shared",
-    "build": "npm run build --workspace=shared && npm run build --workspace=client && npm run build --workspace=server",
-    "build:client": "npm run build --workspace=client",
-    "build:server": "npm run build --workspace=server",
-    "start": "npm run start --workspace=server",
-    "prepare-dev": "npm install && cd ./server && npm install && cd .. && cd ./shared && npm run build && cd .. && cd ./client && npm install",
-    "clear": "npm run clear:node_modules && npm run clear:dist",
-    "clear:node_modules": "rm -rf ./node_modules && cd ./client && rm -rf ./node_modules && cd ../server && rm -rf ./node_modules",
-    "clear:dist": "rm -rf ./dist && cd ./client && rm -rf ./dist && cd ../server && rm -rf ./dist && cd ../shared && rm -rf ./dist"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "typescript": "^5.3.3"
-  },
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.11.2",
-    "@types/react-redux": "^7.1.34",
-    "@types/redux-thunk": "^2.1.32",
-    "react-redux": "^9.2.0",
-    "redux-thunk": "^3.1.0",
-    "tsconfig-paths-webpack-plugin": "^4.2.0",
-    "webpack-cli": "^7.0.2"
-  }
+    "name": "project",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "client",
+        "server",
+        "shared"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:shared\"",
+        "dev:client": "npm run dev --workspace=client",
+        "dev:server": "npm run dev --workspace=server",
+        "dev:shared": "npm run dev --workspace=shared",
+        "build": "npm run build --workspace=shared && npm run build --workspace=client && npm run build --workspace=server",
+        "build:client": "npm run build --workspace=client",
+        "build:server": "npm run build --workspace=server",
+        "start": "npm run start --workspace=server",
+        "clear": "rm -rf ./node_modules ./client/node_modules ./server/node_modules ./shared/node_modules ./client/dist ./server/dist ./shared/dist",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write \"**/*.{js,mjs,cjs,ts,jsx,tsx,json,css}\"",
+        "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,jsx,tsx,json,css}\""
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.3.5",
+        "@eslint/js": "^9.39.4",
+        "concurrently": "^8.2.2",
+        "eslint": "^9.39.4",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-import-resolver-typescript": "^4.4.4",
+        "eslint-plugin-import": "^2.32.0",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^7.1.1",
+        "globals": "^17.5.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.4.0",
+        "prettier": "^3.5.3",
+        "typescript": "^5.3.3",
+        "typescript-eslint": "^8.59.1"
+    }
 }

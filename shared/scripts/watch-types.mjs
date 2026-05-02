@@ -35,13 +35,17 @@ function distributeFiles() {
         }
 
         if (isClientFile) {
-            const targetName = entryName.replace(/\.client\.d\.ts/, '.d.ts').replace(/\.client\.d\.ts\.map/, '.d.ts.map');
+            const targetName = entryName
+                .replace(/\.client\.d\.ts/, '.d.ts')
+                .replace(/\.client\.d\.ts\.map/, '.d.ts.map');
             const targetPath = path.join(distClient, path.dirname(relativePath), targetName);
             copyTo(targetPath, fullPath);
         }
 
         if (isServerFile) {
-            const targetName = entryName.replace(/\.server\.d\.ts/, '.d.ts').replace(/\.server\.d\.ts\.map/, '.d.ts.map');
+            const targetName = entryName
+                .replace(/\.server\.d\.ts/, '.d.ts')
+                .replace(/\.server\.d\.ts\.map/, '.d.ts.map');
             const targetPath = path.join(distServer, path.dirname(relativePath), targetName);
             copyTo(targetPath, fullPath);
         }

@@ -56,13 +56,10 @@
   },
   "scripts": {
     "build": "npm run clean && npm run gen:exports && webpack && npm run build:types",
-    "build:client": "npm run clean && npm run gen:exports && webpack --env target=client && npm run build:types",
-    "build:server": "npm run clean && npm run gen:exports && webpack --env target=server && npm run build:types",
     "gen:exports": "node scripts/generate-exports.mjs",
     "build:types": "node scripts/distribute-types.mjs",
     "watch:types": "tsc --project tsconfig.types.json --watch",
-    "watch:types:dist": "node scripts/watch-types.mjs",
-    "dev": "npm run gen:exports && npm run build:types && tsc --project tsconfig.types.json --watch & node scripts/watch-types.mjs & webpack --watch",
+    "dev": "npm run gen:exports && npm run build:types && (tsc --project tsconfig.types.json --watch & node scripts/watch-types.mjs & webpack --watch)",
     "clean": "rimraf dist"
   },
   "devDependencies": {

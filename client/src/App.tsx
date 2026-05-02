@@ -1,10 +1,10 @@
+import { CLIENT } from '@config';
+import { ViewExample } from '@widget/example';
+import { RegisterForm } from '@widget/RegisterForm';
 import React from 'react';
 import { Routes, Route, Link, useParams } from 'react-router-dom';
 import { User, formatUser, VERSION } from 'shared/constants';
 import { NAME } from 'shared/resolver/examples';
-import { CLIENT } from '@config';
-import { ViewExample } from '@widget/example';
-import { RegisterForm } from '@widget/RegisterForm';
 
 const users: User[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com' },
@@ -49,7 +49,9 @@ function UserDetail() {
             {user ? (
                 <p>{formatUser(user)}</p>
             ) : (
-                <p>User with ID <strong>{userId}</strong> not found</p>
+                <p>
+                    User with ID <strong>{userId}</strong> not found
+                </p>
             )}
         </div>
     );

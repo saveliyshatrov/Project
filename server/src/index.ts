@@ -1,11 +1,14 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import { formatUser, User, VERSION } from 'shared';
-import { NAME } from 'shared/resolver/examples';
-import { RegisterRequest, AuthResponse } from 'shared/auth';
-import { swaggerSpec } from './swagger';
 import path from 'path';
+
+import cors from 'cors';
+import express, { Request, Response } from 'express';
+import { formatUser, User, VERSION } from 'shared';
+import { RegisterRequest, AuthResponse } from 'shared/auth';
+import { NAME } from 'shared/resolver/examples';
+import swaggerUi from 'swagger-ui-express';
+
+import { swaggerSpec } from './swagger';
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,14 +20,8 @@ const whiteList = {
 };
 
 // Middleware
-
 app.use(cors(whiteList));
 app.use(express.json());
-
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'OK', version: VERSION });
-});
 
 // Swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -1,7 +1,9 @@
 import React from 'react';
-import { createWidget } from './index';
-import { resolverExample } from 'shared/resolver';
 import { AUTHOR } from 'shared/constants';
+import { resolverExample } from 'shared/resolver';
+
+import { createWidget } from './index';
+
 
 type ViewProps = {
     name: string;

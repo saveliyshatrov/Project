@@ -33,17 +33,15 @@ for (const entry of entries) {
     if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
 
     if (entry.isDirectory()) {
-        const hasIndex = fs.existsSync(path.join(srcDir, entry.name, 'index.ts'))
-            || fs.existsSync(path.join(srcDir, entry.name, 'index.tsx'));
+        const hasIndex =
+            fs.existsSync(path.join(srcDir, entry.name, 'index.ts')) ||
+            fs.existsSync(path.join(srcDir, entry.name, 'index.tsx'));
 
         if (hasIndex) {
             exports[`./${entry.name}`] = makeExport(entry.name, false);
 
             const files = fs.readdirSync(path.join(srcDir, entry.name));
-            const hasSubModules = files.some(f =>
-                /^index\.(ts|tsx)$/.test(f) === false
-                && /\.(ts|tsx)$/.test(f)
-            );
+            const hasSubModules = files.some((f) => /^index\.(ts|tsx)$/.test(f) === false && /\.(ts|tsx)$/.test(f));
 
             if (hasSubModules) {
                 exports[`./${entry.name}/*`] = makeExport(entry.name, true);

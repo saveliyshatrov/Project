@@ -1,20 +1,20 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "declaration": true,
-    "target": "ES2020",
-    "lib": ["ES2020"],
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "baseUrl": ".",
-    "paths": {
-      "shared": ["../shared/dist/server/index.d.ts"],
-      "shared/*": ["../shared/dist/server/*"],
-      "@*": ["src/*"]
-    }
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "declaration": true,
+        "target": "ES2020",
+        "lib": ["ES2020"],
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "baseUrl": ".",
+        "paths": {
+            "shared": ["../shared/dist/server/index.d.ts"],
+            "shared/*": ["../shared/dist/server/*"],
+            "@*": ["src/*"]
+        }
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
 }

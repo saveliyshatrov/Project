@@ -44,26 +44,17 @@ export function RegisterForm({ onRegistered }: RegisterFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <form
+            onSubmit={handleSubmit}
+            style={{ maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}
+        >
             <h3>Register</h3>
 
             {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
             {success && <p style={{ color: 'green', margin: 0 }}>Registered successfully!</p>}
 
-            <input
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-            />
-            <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-            />
+            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <input
                 type="password"
                 placeholder="Password (min 6)"

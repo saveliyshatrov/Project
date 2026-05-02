@@ -1,6 +1,7 @@
+import { User } from '../index';
+
 import { createResolver } from './createResolver';
 import { normalize } from './normalize';
-import { User } from '../index';
 
 type ExampleParams = {
     collectionName: string;

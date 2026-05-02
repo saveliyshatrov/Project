@@ -1,41 +1,43 @@
-import React, {useEffect, useState} from "react";
-import {CollectionState, updateCollection} from "@store/collectionsSlice";
-import {useDispatch} from "react-redux";
-import {JSX} from "react/jsx-runtime";
+import { CollectionState, updateCollection } from '@store/collectionsSlice';
+import React, { useEffect, useState } from 'react';
+import { JSX } from 'react/jsx-runtime';
+import { useDispatch } from 'react-redux';
+
 import IntrinsicAttributes = JSX.IntrinsicAttributes;
 
-type Controller<ComponentProps, DataProps, collectionsProps = CollectionState> =
-    (componentProps: DataProps) => Promise<{
-        data: ComponentProps & DataProps,
-        collections: collectionsProps
-    } | null>
+type Controller<ComponentProps, DataProps, collectionsProps = CollectionState> = (
+    componentProps: DataProps
+) => Promise<{
+    data: ComponentProps & DataProps;
+    collections: collectionsProps;
+} | null>;
 
-type WidgetParams
-    <ComponentProps, DataProps, collectionsProps = CollectionState> = {
+type WidgetParams<ComponentProps, DataProps, collectionsProps = CollectionState> = {
     view: React.ComponentType<ComponentProps>;
     controller: (componentProps: DataProps) => Promise<{
-        data?: ComponentProps,
-        collections?: collectionsProps
-    } | null>,
-    skeleton?: React.ComponentType<unknown>
+        data?: ComponentProps;
+        collections?: collectionsProps;
+    } | null>;
+    skeleton?: React.ComponentType<unknown>;
 };
 
-type IncomingProps<ComponentProps, DataProps, collectionsProps = CollectionState> =
-    Parameters<Controller<ComponentProps, DataProps, collectionsProps>>[0]
+type IncomingProps<ComponentProps, DataProps, collectionsProps = CollectionState> = Parameters<
+    Controller<ComponentProps, DataProps, collectionsProps>
+>[0];
 
-export const createWidget = <ComponentProps, DataProps, collectionsProps = CollectionState>
-({ view: View, skeleton: Skeleton, controller }: WidgetParams<ComponentProps, DataProps, collectionsProps>) => {
+export const createWidget = <ComponentProps, DataProps, collectionsProps = CollectionState>({
+    view: View,
+    skeleton: Skeleton,
+    controller,
+}: WidgetParams<ComponentProps, DataProps, collectionsProps>) => {
     const Component = (props: IncomingProps<ComponentProps, DataProps, collectionsProps>) => {
         const [showSkeleton, setShowSkeleton] = useState(true);
         const [showNothing, setShowNothing] = useState(false);
         const dispatch = useDispatch();
-        const [componentControllerProps, setComponentControllerProps] = useState({})
+        const [componentControllerProps, setComponentControllerProps] = useState({});
         useEffect(() => {
             controller(props)
                 .then((result) => {
-                    console.log({
-                        result
-                    })
                     if (!result) {
                         setShowNothing(true);
                         return;
@@ -51,13 +53,10 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
                     }
                     setShowSkeleton(false);
                 })
-                .catch((error) => {
-                    console.log({
-                        error
-                    })
+                .catch(() => {
                     setShowSkeleton(false);
                     setShowNothing(true);
-                })
+                });
         }, []);
 
         if (showNothing) {
@@ -65,17 +64,13 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
         }
 
         if (Skeleton && showSkeleton) {
-            return <Skeleton />
+            return <Skeleton />;
         }
 
-        return (
-            <View
-                { ...(componentControllerProps as React.ComponentProps<typeof View> & IntrinsicAttributes) }
-            />
-        )
-    }
+        return <View {...(componentControllerProps as React.ComponentProps<typeof View> & IntrinsicAttributes)} />;
+    };
 
-    Component.displayName = `widget-${View.displayName}`
+    Component.displayName = `widget-${View.displayName}`;
 
     return Component;
-}
+};
