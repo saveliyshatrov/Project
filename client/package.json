@@ -4,8 +4,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "webpack serve --mode development --config webpack.dev.config.ts",
-        "build": "webpack --mode production --config webpack.prod.config.ts"
+        "dev": "node dev-server.mjs",
+        "build": "webpack --mode production --config webpack.prod.config.ts",
+        "build:mobile": "webpack --mode production --config webpack.prod.config.ts --config-name mobile",
+        "build:desktop": "webpack --mode production --config webpack.prod.config.ts --config-name desktop"
     },
     "dependencies": {
         "@types/node": "^25.6.0",

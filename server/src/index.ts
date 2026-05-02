@@ -1,18 +1,19 @@
 import path from 'path';
 
-import { swaggerSpec } from '@swagger';
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 import * as expressUseragent from 'express-useragent';
 import { formatUser, User, VERSION } from 'shared';
 import { RegisterRequest, AuthResponse } from 'shared/auth';
 import { NAME } from 'shared/resolver/examples';
+import { DeviceType } from 'shared/utils/getDeviceType';
 import swaggerUi from 'swagger-ui-express';
 
-function getDeviceType(req: Request): 'mobile' | 'tablet' | 'desktop' {
-    if (req.useragent?.isMobile) return 'mobile';
-    if (req.useragent?.isTablet) return 'tablet';
-    return 'desktop';
+import { swaggerSpec } from './swagger';
+
+function getDeviceType(req: Request): DeviceType {
+    if (req.useragent?.isMobile) return DeviceType.mobile;
+    return DeviceType.desktop;
 }
 
 const app = express();
@@ -341,16 +342,14 @@ app.post('/users', (req: Request, res: Response) => {
 });
 
 // Serve static files from client dist
-app.use(express.static(path.join(__dirname, '../../client/dist')));
+app.use('/dist/mobile', express.static(path.join(__dirname, '../../client/dist/mobile')));
+app.use('/dist/desktop', express.static(path.join(__dirname, '../../client/dist/desktop')));
 
-// Prod chunks sending
-app.get('/dist/*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, `../../client${req.url}`));
-});
-
-// Fallback to index.html for React Router
+// Fallback to correct index.html based on device type
 app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    const device = getDeviceType(req);
+    const indexPath = path.join(__dirname, `../../client/dist/${device}/index.html`);
+    res.sendFile(indexPath);
 });
 
 // Start server

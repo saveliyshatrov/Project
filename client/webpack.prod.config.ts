@@ -1,62 +1,7 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import webpack from 'webpack';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { createConfig } from './webpack.base.config.ts';
 
-const Config: webpack.Configuration = {
-    mode: 'production',
-    target: 'web',
-    entry: {
-        index: './src/index.tsx',
-    },
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: '[name].[contenthash].js',
-        clean: true,
-        publicPath: '/dist/',
-    },
-    optimization: {
-        runtimeChunk: 'single',
-        splitChunks: {
-            chunks: 'all',
-        },
-    },
-    resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-        plugins: [new TsconfigPathsPlugin()],
-    },
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                loader: 'ts-loader',
-                exclude: /node_modules/,
-                options: {
-                    transpileOnly: false,
-                },
-            },
-            {
-                test: /\.css$/,
-                use: ['style-loader', 'css-loader'],
-            },
-        ],
-    },
-    plugins: [
-        new HtmlWebpackPlugin({
-            title: 'Project',
-            template: './public/index.html',
-        }),
-        new webpack.DefinePlugin({
-            'process.env': {
-                CLIENT: JSON.stringify(true),
-            },
-        }),
-    ],
-};
+const configs: webpack.Configuration[] = [createConfig('mobile', 'production'), createConfig('desktop', 'production')];
 
-export default Config;
+export default configs;

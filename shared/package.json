@@ -52,6 +52,24 @@
             "import": "./dist/client/resolver/*.js",
             "require": "./dist/server/resolver/*.cjs",
             "default": "./dist/client/resolver/*.js"
+        },
+        "./utils": {
+            "types": {
+                "import": "./dist/client/utils/index.d.ts",
+                "require": "./dist/server/utils/index.d.ts"
+            },
+            "import": "./dist/client/utils/index.js",
+            "require": "./dist/server/utils/index.cjs",
+            "default": "./dist/client/utils/index.js"
+        },
+        "./utils/*": {
+            "types": {
+                "import": "./dist/client/utils/*.d.ts",
+                "require": "./dist/server/utils/*.d.ts"
+            },
+            "import": "./dist/client/utils/*.js",
+            "require": "./dist/server/utils/*.cjs",
+            "default": "./dist/client/utils/*.js"
         }
     },
     "scripts": {

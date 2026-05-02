@@ -60,6 +60,7 @@ function UserDetail() {
 export default function App() {
     return (
         <div style={{ padding: '20px' }}>
+            <div>Mobile App</div>
             <Routes>
                 <Route path="/" element={<UserList />} />
                 <Route path="/users/:userId" element={<UserDetail />} />
