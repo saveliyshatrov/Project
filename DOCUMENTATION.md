@@ -11,7 +11,9 @@
   - [Shared Package](#shared-package)
   - [Client Package](#client-package)
   - [Server Package](#server-package)
-- [Platform-Specific Code Resolution](#platform-specific-code-resolution)
+- [Platform-Specific Builds (Client)](#platform-specific-builds-client)
+- [Device Detection](#device-detection)
+- [Platform-Specific Code Resolution (Shared)](#platform-specific-code-resolution-shared)
 - [Type Distribution System](#type-distribution-system)
 - [Package Exports and Module Resolution](#package-exports-and-module-resolution)
 - [Server API](#server-api)
@@ -24,6 +26,7 @@
   - [normalize](#normalize)
   - [Example Resolver](#example-resolver)
 - [Shared Modules](#shared-modules)
+- [Linting and Formatting](#linting-and-formatting)
 - [Scripts Reference](#scripts-reference)
 - [Dependency Graph](#dependency-graph)
 - [Development Workflow](#development-workflow)
@@ -32,32 +35,41 @@
 
 ## Project Overview
 
-A full-stack monorepo application demonstrating shared type-safe code between a React frontend and an Express backend. The project uses npm workspaces to manage three packages: `client`, `server`, and `shared`. The key feature is a platform-specific build system that compiles shared code into separate client (ES modules) and server (CommonJS) outputs, with automatic type declaration distribution.
+A full-stack monorepo application with shared type-safe code between a React frontend and an Express backend. The project uses npm workspaces to manage three packages: `client`, `server`, and `shared`.
+
+Key features:
+- **Platform-specific client builds** — separate mobile and desktop bundles built from the same source
+- **Automatic device detection** — server routes users to the correct bundle based on User-Agent
+- **Dual-format shared package** — ES modules for client, CommonJS for server
+- **Automatic type distribution** — platform-specific TypeScript declarations
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Monorepo Root                     │
-│  (npm workspaces, shared configs, concurrent dev)   │
-├──────────────┬──────────────────┬───────────────────┤
-│   Client     │      Shared      │      Server       │
-│  (React 18)  │   (Webpack +     │    (Express)      │
-│  Webpack 5   │    TypeScript)   │    ts-node-dev    │
-│  Redux TK    │                  │    tsc            │
-└──────────────┴──────────────────┴───────────────────┘
-       │                  │                  │
-       │    ┌─────────────┼─────────────┐     │
-       ▼    ▼             ▼             ▼     ▼
-   ESM imports ◄── dist/client/*.js  dist/server/*.cjs ─► CJS require
+┌──────────────────────────────────────────────────────────────┐
+│                        Monorepo Root                          │
+│  (npm workspaces, ESLint flat config, Prettier, Husky)       │
+├──────────────────┬──────────────────┬────────────────────────┤
+│     Client       │      Shared      │       Server           │
+│   (React 18)     │   (Webpack +     │     (Express)          │
+│   Webpack 5      │    TypeScript)   │     ts-node-dev        │
+│   Redux TK       │                  │     tsc                │
+└────────┬─────────┴────────┬─────────┴──────────┬─────────────┘
+         │                  │                     │
+    ┌────┴────┐             │                     │
+    │         │             │                     │
+  mobile   desktop          │                     │
+  dist/    dist/            │                     │
+    │         │             │                     │
+    ▼         ▼             ▼                     ▼
+  ESM ◄── dist/client/*.js  dist/server/*.cjs ─► CJS
 ```
 
-The `shared` package is the core of the architecture. It contains code that both client and server need: types, constants, data resolvers, and normalization utilities. During build, shared produces two separate outputs:
+The `shared` package produces two outputs:
+- `dist/client/` — ES modules (`.js`) for browser
+- `dist/server/` — CommonJS (`.cjs`) for Node.js
 
-- `dist/client/` — ES modules (`.js`), for browser consumption
-- `dist/server/` — CommonJS modules (`.cjs`), for Node.js consumption
-
-Package exports in `shared/package.json` use conditional exports (`import` vs `require`) so each consumer automatically receives the correct format.
+Conditional exports in `shared/package.json` route imports automatically.
 
 ## Directory Structure
 
@@ -65,62 +77,79 @@ Package exports in `shared/package.json` use conditional exports (`import` vs `r
 Project/
 ├── package.json                  # Root workspace config
 ├── tsconfig.json                 # Base TypeScript configuration
-├── .prettierrc.json              # Code formatting rules
-├── .gitignore
+├── .prettierrc.json              # Code formatting rules (4 spaces, single quotes)
+├── .editorconfig                 # Editor-agnostic formatting
+├── eslint.config.js              # ESLint v9 flat config (root-level)
+├── .husky/
+│   └── pre-commit                # Runs lint-staged on commit
 │
 ├── client/                       # React frontend
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── webpack.base.config.ts    # Base webpack config
-│   ├── webpack.dev.config.ts     # Dev server config
-│   ├── webpack.prod.config.ts    # Production build config
+│   ├── webpack.base.config.ts    # Platform-aware config factory
+│   ├── webpack.dev.config.ts     # Dev config (mobile only)
+│   ├── webpack.prod.config.ts    # Production (mobile + desktop)
+│   ├── dev-server.mjs            # Custom Express dev server
 │   ├── public/
 │   │   └── index.html            # HTML template
 │   └── src/
 │       ├── index.tsx             # Application entry point
-│       ├── App.tsx               # Main React component
+│       ├── App.tsx               # Base App component (fallback)
+│       ├── App.mobile.tsx        # Mobile-specific App
+│       ├── App.desktop.tsx       # Desktop-specific App
 │       ├── config.ts             # Environment flags (CLIENT)
 │       ├── store/
 │       │   ├── index.ts          # Redux store setup
 │       │   └── collectionsSlice.ts  # Collections state slice
 │       └── widget/
 │           ├── index.tsx         # createWidget factory
+│           ├── RegisterForm.tsx  # User registration form
 │           └── example.tsx       # Example widget implementation
 │
 ├── server/                       # Express backend
 │   ├── package.json
 │   ├── tsconfig.json
+│   ├── eslint.config.mts         # Server-specific ESLint config
 │   └── src/
-│       └── index.ts              # Express app + API endpoints
+│       ├── index.ts              # Express app + API endpoints
+│       └── swagger.ts            # Swagger/OpenAPI spec
 │
 └── shared/                       # Shared code (client + server)
     ├── package.json
     ├── tsconfig.json
-    ├── webpack.config.ts         # Platform-specific webpack build
+    ├── tsconfig.types.json       # Declaration-only compilation
+    ├── webpack.config.ts         # Dual-target webpack build
     ├── scripts/
-    │   └── distribute-types.mjs  # Type declaration distribution
+    │   ├── generate-exports.mjs  # Auto-generates package.json exports
+    │   ├── distribute-types.mjs  # Type declaration distribution
+    │   └── watch-types.mjs       # Watch mode for type distribution
     └── src/
         ├── index.ts              # Shared re-exports
+        ├── auth/
+        │   └── index.ts          # Auth interfaces (RegisterRequest, AuthResponse)
         ├── constants/
         │   └── index.ts          # Constants, types, helpers
-        └── resolver/
-            ├── index.ts          # Resolver re-exports
-            ├── createResolver.ts # Resolver factory
-            ├── example.ts        # Example resolver
-            ├── normalize.ts      # Data normalization utility
-            ├── examples.client.ts # Client-only export
-            └── examples.server.ts # Server-only export
+        ├── resolver/
+        │   ├── index.ts          # Resolver re-exports
+        │   ├── createResolver.ts # Resolver factory
+        │   ├── example.ts        # Example resolver
+        │   ├── normalize.ts      # Data normalization utility
+        │   ├── examples.client.ts # Client-only export
+        │   └── examples.server.ts # Server-only export
+        └── utils/
+            ├── index.ts          # Utils re-exports
+            └── getDeviceType.ts  # DeviceType enum
 ```
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 18, TypeScript, Webpack 5, Redux Toolkit, CSS |
-| **Backend** | Express, TypeScript, ts-node-dev, CORS |
+| **Frontend** | React 18, TypeScript, Webpack 5, Redux Toolkit, react-router-dom v7 |
+| **Backend** | Express, TypeScript, ts-node-dev, CORS, Swagger, express-useragent |
 | **Shared** | Webpack 5 (dual-target), TypeScript |
 | **Monorepo** | npm workspaces, concurrently |
-| **Tooling** | ESLint, Prettier, ts-loader, html-webpack-plugin |
+| **Tooling** | ESLint v9 (flat config), Prettier, Husky, lint-staged |
 
 ## Getting Started
 
@@ -133,21 +162,23 @@ Project/
 
 ```bash
 # Install all dependencies across workspaces
-npm run prepare-dev
-
-# Or manually:
 npm install
-cd shared && npm run build && cd ..
+
+# Build shared package (required before client/server can import it)
+npm run build --workspace=shared
 ```
 
 ### Development
 
 ```bash
-# Start all dev servers concurrently (client on :3000, server on :3001, shared watch)
+# Start all dev servers concurrently
 npm run dev
+#   client:  http://localhost:3000 (custom Express dev server, mobile + desktop)
+#   server:  http://localhost:3001 (Express API)
+#   shared:  watch mode (webpack + types)
 
 # Start individual packages:
-npm run dev:client    # Webpack dev server on port 3000
+npm run dev:client    # Custom dev server on port 3000 (both platforms)
 npm run dev:server    # Express with ts-node-dev on port 3001
 npm run dev:shared    # Webpack watch mode for shared
 ```
@@ -155,35 +186,46 @@ npm run dev:shared    # Webpack watch mode for shared
 ### Production Build
 
 ```bash
-# Build everything
+# Build everything (shared → client → server)
 npm run build
 
 # Or individually:
 npm run build:shared   # Build shared (webpack + types)
-npm run build:client   # Build client (webpack production)
+npm run build:client   # Build client (webpack: mobile + desktop)
 npm run build:server   # Build server (tsc)
 
-# Start production server
-npm start              # Runs server on port 3001
+# Start production server (serves both platforms on port 3001)
+npm start
+```
+
+### Linting and Formatting
+
+```bash
+npm run lint              # Check all files
+npm run lint:fix          # Auto-fix ESLint issues
+npm run format            # Format all files with Prettier
+npm run format:check      # Check formatting without modifying
 ```
 
 ### Cleanup
 
 ```bash
-npm run clear           # Remove all node_modules and dist directories
-npm run clear:node_modules  # Remove node_modules only
-npm run clear:dist          # Remove dist directories only
+npm run clear             # Remove all node_modules and dist directories
 ```
 
 ## Build System
 
 ### Shared Package
 
-The shared package has a two-stage build process:
+The shared package has a multi-stage build process:
 
-#### Stage 1: Webpack Compilation
+#### Stage 1: Export Generation
 
-`webpack.config.ts` scans `src/` for all `.ts`/`.tsx` files and compiles them twice — once for client, once for server:
+`scripts/generate-exports.mjs` scans `src/` for directories with `index.ts` files and auto-generates the `exports` field in `package.json`.
+
+#### Stage 2: Webpack Compilation
+
+`webpack.config.ts` compiles all source files twice — once for client, once for server:
 
 | Setting | Client | Server |
 |---------|--------|--------|
@@ -194,7 +236,7 @@ The shared package has a two-stage build process:
 | `externals` | none | all node_modules (commonjs) |
 | `externalsPresets.node` | `false` | `true` |
 
-#### Stage 2: Type Declaration Distribution
+#### Stage 3: Type Declaration Distribution
 
 `scripts/distribute-types.mjs` performs:
 
@@ -208,30 +250,37 @@ The shared package has a two-stage build process:
 **Commands:**
 
 ```bash
-npm run build          # Full build: clean → webpack → types
-npm run build:client   # Client only: clean → webpack --env target=client → types
-npm run build:server   # Server only: clean → webpack --env target=server → types
+npm run build          # Full build: clean → gen:exports → webpack → types
+npm run gen:exports    # Generate package.json exports field
 npm run build:types    # Type generation and distribution only
-npm run dev            # webpack --watch
+npm run dev            # gen:exports → types → watch (webpack + tsc + distribute)
 npm run clean          # rimraf dist
 ```
 
 ### Client Package
 
-Uses Webpack 5 with three config files:
+Uses Webpack 5 with a config factory pattern:
 
 | File | Purpose |
 |------|---------|
-| `webpack.base.config.ts` | Base config: entry, loaders, plugins |
-| `webpack.dev.config.ts` | Dev server: port 3000, HMR, live reload, CORS, TsconfigPathsPlugin |
-| `webpack.prod.config.ts` | Production: code splitting, runtime chunk, content hash, DefinePlugin (CLIENT=true) |
+| `webpack.base.config.ts` | Config factory: generates platform-specific configs with NormalModuleReplacementPlugin for `.mobile.tsx` / `.desktop.tsx` resolution |
+| `webpack.dev.config.ts` | Dev: single config for mobile platform |
+| `webpack.prod.config.ts` | Production: array of configs for mobile + desktop |
+| `dev-server.mjs` | Custom Express dev server that watches and serves both platforms |
 
 **Key features:**
 - Entry: `./src/index.tsx`
-- TypeScript: `ts-loader` with `transpileOnly: true` in dev, `false` in prod
+- TypeScript: `ts-loader` with `transpileOnly: true`
 - CSS: `style-loader` + `css-loader`
 - Path aliases via `TsconfigPathsPlugin` (resolves `@store`, `@widget`, `@config`)
-- `process.env.CLIENT` set to `true` via `DefinePlugin`
+- `process.env.CLIENT` and `process.env.PLATFORM` set via `DefinePlugin`
+- `NormalModuleReplacementPlugin` replaces `App.tsx` with `App.mobile.tsx` or `App.desktop.tsx`
+
+**Development server** (`dev-server.mjs`):
+- Single Express server on port 3000
+- Runs webpack in watch mode for both mobile and desktop
+- Serves static files from `dist/mobile` and `dist/desktop`
+- Detects device type via User-Agent and serves the correct `index.html`
 
 ### Server Package
 
@@ -239,15 +288,129 @@ Uses TypeScript compiler directly (no webpack):
 
 | Setting | Value |
 |---------|-------|
-| `module` | `nodenext` |
-| `moduleResolution` | `NodeNext` |
+| `module` | `commonjs` |
+| `moduleResolution` | `node` |
 | `outDir` | `./dist` |
 | `rootDir` | `./src` |
 
 **Dev:** `ts-node-dev --respawn --transpile-only src/index.ts`
 **Prod:** `tsc` then `node dist/index.js`
 
-## Platform-Specific Code Resolution
+## Platform-Specific Builds (Client)
+
+The client builds separate bundles for mobile and desktop platforms from the same source code.
+
+### File Naming Convention
+
+| File | Used in mobile build | Used in desktop build |
+|------|---------------------|----------------------|
+| `App.tsx` | Yes (fallback) | Yes (fallback) |
+| `App.mobile.tsx` | **Yes** (overrides App.tsx) | No |
+| `App.desktop.tsx` | No | **Yes** (overrides App.tsx) |
+
+When both `App.tsx` and `App.mobile.tsx` exist, the mobile build uses `App.mobile.tsx` and the desktop build uses `App.tsx` (unless `App.desktop.tsx` also exists).
+
+### How It Works
+
+`webpack.base.config.ts` uses `webpack.NormalModuleReplacementPlugin` to intercept module resolution:
+
+```typescript
+new webpack.NormalModuleReplacementPlugin(
+    /^(.*\/)?([^/]+?)(\.tsx?|\.jsx?)$/,
+    (resource) => {
+        // Check if a platform-specific file exists
+        const platformFile = `${basename}.${platform}${ext}`;
+        if (fs.existsSync(platformFile)) {
+            resource.request = platformFile;
+        }
+    }
+)
+```
+
+Additionally, the `resolve.extensions` array prioritizes platform-specific extensions:
+```typescript
+extensions: ['.mobile.tsx', '.mobile.ts', '.tsx', '.ts', '.js', '.jsx', '.json']
+```
+
+### Output Structure
+
+```
+client/dist/
+├── mobile/
+│   ├── index.html
+│   ├── runtime.[hash].js
+│   ├── [vendor].[hash].js
+│   └── main.[hash].js          # Built with App.mobile.tsx
+└── desktop/
+    ├── index.html
+    ├── runtime.[hash].js
+    ├── [vendor].[hash].js
+    └── main.[hash].js          # Built with App.desktop.tsx (or App.tsx)
+```
+
+## Device Detection
+
+Both the dev server and production server automatically detect the client's device type and serve the appropriate bundle.
+
+### Server-Side Detection
+
+The server uses `express-useragent` middleware to parse the User-Agent header:
+
+```typescript
+app.use(expressUseragent.express());
+
+function getDeviceType(req): 'mobile' | 'tablet' | 'desktop' {
+    if (req.useragent?.isMobile) return 'mobile';
+    if (req.useragent?.isTablet) return 'tablet';
+    return 'desktop';
+}
+```
+
+### Static File Serving
+
+```typescript
+app.use('/dist/mobile', express.static(path.join(__dirname, '../../client/dist/mobile')));
+app.use('/dist/desktop', express.static(path.join(__dirname, '../../client/dist/desktop')));
+```
+
+### Fallback Route
+
+```typescript
+app.get('*', (req, res) => {
+    const device = getDeviceType(req);
+    res.sendFile(path.join(__dirname, `../../client/dist/${device}/index.html`));
+});
+```
+
+### Device Detection Endpoint
+
+`GET /device` returns detailed device information:
+
+```json
+{
+    "type": "mobile",
+    "platform": "iPhone",
+    "browser": "Safari",
+    "isMobile": true,
+    "isTablet": false,
+    "isDesktop": false,
+    "source": "Mozilla/5.0 (iPhone...)"
+}
+```
+
+### Shared DeviceType Enum
+
+```typescript
+// shared/src/utils/getDeviceType.ts
+export const enum DeviceType {
+    mobile = 'mobile',
+    desktop = 'desktop',
+}
+```
+
+Import: `import { DeviceType } from 'shared/utils/getDeviceType'`
+
+## Platform-Specific Code Resolution (Shared)
 
 Files in `shared/src/` follow a naming convention that determines which platforms they compile to:
 
@@ -257,14 +420,11 @@ Files in `shared/src/` follow a naming convention that determines which platform
 | `*.client.ts` | `dist/client/` only | Browser-specific code |
 | `*.client.tsx` | `dist/client/` only | Browser-specific React code |
 | `*.server.ts` | `dist/server/` only | Node.js-specific code |
-| `*.server.tsx` | `dist/server/` only | Node.js-specific React code |
 
 **How it works** (`shared/webpack.config.ts`):
 
 ```typescript
 function getEntries(target: 'client' | 'server') {
-    const allFiles = glob.sync('**/*.{ts,tsx}', { cwd: srcDir });
-
     for (const file of allFiles) {
         const isClientFile = /\.client\.(ts|tsx)$/.test(file);
         const isServerFile = /\.server\.(ts|tsx)$/.test(file);
@@ -288,17 +448,17 @@ function getEntries(target: 'client' | 'server') {
 
 ```typescript
 // shared/src/resolver/examples.client.ts
-export const NAME = 'FAKE_NAME';
+export const NAME = 'CLIENT_NAME';
 
 // shared/src/resolver/examples.server.ts
-export const NAME = 'NAME_1';
+export const NAME = 'SERVER_NAME';
 ```
 
 Both files compile to `resolver/examples` in their respective output directories. When either client or server imports `shared/resolver/examples`, they receive their platform's version.
 
 ## Type Distribution System
 
-The type distribution script (`shared/scripts/distribute-types.mjs`) ensures TypeScript declarations match the platform-specific JS output:
+The type distribution script ensures TypeScript declarations match the platform-specific JS output:
 
 **Input** (from `tsc --emitDeclarationOnly`):
 ```
@@ -328,29 +488,17 @@ dist/server/constants/index.d.ts       # from index.d.ts (shared)
 {
   "exports": {
     ".": {
-      "types": "./dist/server/index.d.ts",
+      "types": { "import": "./dist/client/index.d.ts", "require": "./dist/server/index.d.ts" },
       "import": "./dist/client/index.js",
       "require": "./dist/server/index.cjs",
       "default": "./dist/client/index.js"
     },
-    "./constants": {
-      "types": "./dist/server/constants/index.d.ts",
-      "import": "./dist/client/constants/index.js",
-      "require": "./dist/server/constants/index.cjs",
-      "default": "./dist/client/constants/index.js"
-    },
-    "./resolver": {
-      "types": "./dist/server/resolver/index.d.ts",
-      "import": "./dist/client/resolver/index.js",
-      "require": "./dist/server/resolver/index.cjs",
-      "default": "./dist/client/resolver/index.js"
-    },
-    "./resolver/*": {
-      "types": "./dist/server/resolver/*.d.ts",
-      "import": "./dist/client/resolver/*.js",
-      "require": "./dist/server/resolver/*.cjs",
-      "default": "./dist/server/resolver/*.cjs"
-    }
+    "./auth": { ... },
+    "./constants": { ... },
+    "./resolver": { ... },
+    "./resolver/*": { ... },
+    "./utils": { ... },
+    "./utils/*": { ... }
   }
 }
 ```
@@ -362,6 +510,8 @@ dist/server/constants/index.d.ts       # from index.d.ts (shared)
 | `require` | CommonJS requires | Server Node.js runtime |
 | `default` | Fallback | When no condition matches |
 
+Exports are auto-generated by `scripts/generate-exports.mjs` based on directory structure.
+
 ### Client Module Resolution
 
 `client/tsconfig.json` path aliases:
@@ -369,16 +519,15 @@ dist/server/constants/index.d.ts       # from index.d.ts (shared)
 ```json
 {
   "paths": {
-    "shared/*": ["node_modules/shared/*"],
-    "@*": ["*"]
+    "@*": ["src/*"]
   }
 }
 ```
 
-- `shared/*` → resolves via package exports to `dist/client/*` (ESM)
 - `@store/*` → `src/store/*`
 - `@widget/*` → `src/widget/*`
 - `@config` → `src/config.ts`
+- `shared/*` → resolves via package exports to `dist/client/*` (ESM)
 
 ### Server Module Resolution
 
@@ -405,28 +554,21 @@ dist/server/constants/index.d.ts       # from index.d.ts (shared)
 
 | Method | Path | Description | Request Body | Response |
 |--------|------|-------------|--------------|----------|
-| `GET` | `/health` | Health check | — | `{ status: "OK", version: "1.0.0" }` |
+| `GET` | `/health` | Health check | — | `{ status, version, device, platform, browser }` |
+| `GET` | `/device` | Device detection | — | `{ type, platform, browser, isMobile, isTablet, isDesktop, source }` |
 | `GET` | `/users` | Get all users | — | `User[]` |
-| `GET` | `/users/:id` | Get user by ID | — | `{ success: true, data: "..." }` or `{ success: false, error: "..." }` |
-| `POST` | `/users` | Create user | `{ name, email }` | `{ success: true, data: "..." }` |
-| `GET` | `/dist/*` | Serve production chunks | — | Static file |
-| `GET` | `*` | SPA fallback | — | `index.html` |
+| `GET` | `/users/:id` | Get user by ID | — | `{ success, data }` or `{ success: false, error }` |
+| `POST` | `/auth/register` | Register user | `{ name, email, password }` | `{ success, user }` or error |
+| `POST` | `/users` | Create user | `{ name, email }` | `{ success, data }` |
+| `GET` | `/api-docs` | Swagger UI | — | Swagger documentation |
+| `GET` | `*` | SPA fallback | — | Platform-specific `index.html` |
 
-### Data Types
+### Static File Serving
 
-```typescript
-interface User {
-    id: string;
-    name: string;
-    email: string;
-}
-
-interface ApiResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: string;
-}
-```
+| Route | Serves from |
+|-------|-------------|
+| `/dist/mobile/*` | `client/dist/mobile/` |
+| `/dist/desktop/*` | `client/dist/desktop/` |
 
 ### CORS Configuration
 
@@ -436,13 +578,6 @@ interface ApiResponse<T> {
 | Methods | `GET`, `POST` |
 | Headers | `Content-Type`, `Authorization` |
 
-### Static File Serving
-
-The server serves the client production build from `../../client/dist`:
-- `express.static` serves files from `client/dist/`
-- Fallback route (`*`) serves `index.html` for React Router support
-- `/dist/*` route serves webpack production chunks
-
 ## Client Application
 
 ### Components
@@ -450,31 +585,33 @@ The server serves the client production build from `../../client/dist`:
 #### Entry Point (`src/index.tsx`)
 
 ```typescript
-import { createRoot } from 'react-dom/client';
-import { Provider } from 'react-redux';
 import { store } from '@store';
+import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
-createRoot(document.getElementById('root')!).render(
+root.render(
     <Provider store={store}>
-        <App />
+        <BrowserRouter>
+            <App />
+        </BrowserRouter>
     </Provider>
 );
 ```
 
-#### App Component (`src/App.tsx`)
+#### App Component
 
-The main component that renders:
+| File | Purpose |
+|------|---------|
+| `App.tsx` | Base App component (used as fallback when no platform-specific file exists) |
+| `App.mobile.tsx` | Mobile-specific App component |
+| `App.desktop.tsx` | Desktop-specific App component |
+
+The main component renders:
 - Header with app version and platform info
 - `ViewExample` widget
+- `RegisterForm` widget
 - User list with formatted user data
-
-```typescript
-import { User, formatUser, VERSION } from 'shared/constants';
-import { NAME } from 'shared/resolver/examples';
-import { CLIENT } from '@config';
-import { ViewExample } from '@widget/example';
-```
 
 #### Configuration (`src/config.ts`)
 
@@ -482,7 +619,7 @@ import { ViewExample } from '@widget/example';
 export const CLIENT = process.env.CLIENT;
 ```
 
-Set via webpack `DefinePlugin` to `true` in the client build. This is also used in `shared/src/resolver/createResolver.ts` to determine the `isServer` context flag.
+Set via webpack `DefinePlugin` to `true` in the client build.
 
 ### State Management
 
@@ -493,13 +630,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { reducer as CollectionsReducer } from './collectionsSlice';
 
 export const store = configureStore({
-    reducer: {
-        collections: CollectionsReducer,
-    },
+    reducer: { collections: CollectionsReducer },
 });
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
 ```
 
 **Collections Slice** (`src/store/collectionsSlice.ts`):
@@ -508,9 +640,7 @@ export type AppDispatch = typeof store.dispatch;
 |----------|------|-------------|
 | State shape | `{ [key: string]: Record<string, unknown> }` | Dictionary of named collections |
 | Initial state | `{}` | Empty object |
-| `updateCollection` | `PayloadAction<CollectionState>` | Merges new collections into state, creating or extending each by name |
-
-The collections slice is the primary Redux state in this application. It stores data fetched by widgets in a normalized format (keyed objects).
+| `updateCollection` | `PayloadAction<CollectionState>` | Merges new collections into state |
 
 ### Widget System
 
@@ -545,10 +675,6 @@ export const createWidget = <ComponentProps, DataProps, collectionsProps = Colle
 | `DataProps` | Props passed from parent to the widget |
 | `collectionsProps` | Type of collections returned (defaults to `CollectionState`) |
 
-**Return Value:**
-
-A React component with `displayName = 'widget-{View.displayName}'` that accepts `DataProps`.
-
 #### Example Widget (`src/widget/example.tsx`)
 
 ```typescript
@@ -559,21 +685,12 @@ export const ViewExample = createWidget({
         const userCollection = await resolverExample({ collectionName: 'users' });
         return {
             data: { example, name },
-            collections: {
-                userCollection,
-                someCollection: { name: 'NAME', age: 999 },
-            },
+            collections: { userCollection, someCollection: { name: 'NAME', age: 999 } },
         };
     },
     skeleton: () => <div>--[{AUTHOR}]--</div>,
 });
 ```
-
-This widget:
-- Shows `--[{AUTHOR}]--` skeleton for 5 seconds
-- Fetches data via `resolverExample` (which calls the server API)
-- Dispatches `userCollection` to Redux
-- Renders the View with resolved `name` and `example` props
 
 ## Resolver System
 
@@ -596,7 +713,7 @@ export function createResolver<Params, CollectionType>(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `func` | `(ctx, params) => Collections<CollectionType> \| Promise<...>` | The data-fetching function |
+| `func` | `(ctx, params) => Collections<CollectionType> | Promise<...>` | The data-fetching function |
 | `options.name` | `string` | Resolver identifier |
 | `options.sync` | `boolean` (optional) | If `true`, the runner is synchronous |
 
@@ -609,14 +726,7 @@ export function createResolver<Params, CollectionType>(
 }
 ```
 
-The `isServer` flag is determined by `!process.env.CLIENT`. Since webpack `DefinePlugin` sets `CLIENT=true` only in the client build, the shared code automatically knows which platform it's running on.
-
-**Return Type:**
-
-| `sync` | Return |
-|--------|--------|
-| `false` (default) | `async (params) => Collections<CollectionType>` |
-| `true` | `(params) => Collections<CollectionType>` |
+The `isServer` flag is determined by `!process.env.CLIENT`.
 
 ### normalize
 
@@ -669,19 +779,7 @@ export const resolverExample = createResolver(
 );
 ```
 
-On the client, this resolver fetches users from the server API and normalizes them into a collection. On the server, the same resolver could use direct database access instead of HTTP.
-
-### Platform-Specific Exports
-
-```typescript
-// examples.client.ts → dist/client/resolver/examples.js
-export const NAME = 'FAKE_NAME';
-
-// examples.server.ts → dist/server/resolver/examples.cjs
-export const NAME = 'NAME_1';
-```
-
-Both compile to the same entry point name (`resolver/examples`). Each platform gets its own version automatically via the build system and package exports.
+On the client, this resolver fetches users from the server API and normalizes them into a collection.
 
 ## Shared Modules
 
@@ -695,25 +793,97 @@ Both compile to the same entry point name (`resolver/examples`). Each platform g
 | `ApiResponse<T>` | `interface` | `{ success: boolean, data?: T, error?: string }` |
 | `formatUser(user)` | `function` | Returns `"Name <email> (ID: id)"` |
 
+### Auth (`shared/src/auth/index.ts`)
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `RegisterRequest` | `interface` | `{ name: string, email: string, password: string }` |
+| `AuthResponse` | `interface` | `{ success: boolean, user?: User, error?: string, token?: string }` |
+
+### Utils (`shared/src/utils/index.ts`)
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `DeviceType` | `enum` | `{ mobile: 'mobile', desktop: 'desktop' }` |
+
 ### Index (`shared/src/index.ts`)
 
-Re-exports from `constants/` for convenience:
+Re-exports for convenience:
 
 ```typescript
-export * from './constants';
+export interface User { ... }
+export interface ApiResponse<T> { ... }
+export function formatUser(user: User): string { ... }
+export const VERSION = '1.0.0';
 ```
 
-This allows `import { User, formatUser, VERSION } from 'shared'` as a shorthand.
+This allows `import { User, formatUser, VERSION } from 'shared'`.
 
-### Resolver Index (`shared/src/resolver/index.ts`)
+## Linting and Formatting
 
-```typescript
-export * from './createResolver';
-export * from './example';
-export * from './normalize';
+### ESLint (v9 Flat Config)
+
+Root config: `eslint.config.js`
+
+| Plugin | Purpose |
+|--------|---------|
+| `@eslint/js` | Base recommended rules |
+| `typescript-eslint` | TypeScript support |
+| `eslint-plugin-react` | React rules |
+| `eslint-plugin-react-hooks` | Hooks rules (rules-of-hooks, exhaustive-deps) |
+| `eslint-plugin-import` | Import ordering and validation |
+
+**Key Rules:**
+
+| Rule | Setting |
+|------|---------|
+| `@typescript-eslint/no-unused-vars` | `error` (ignores `_` prefix) |
+| `@typescript-eslint/no-explicit-any` | `warn` |
+| `prefer-const` | `error` |
+| `react/react-in-jsx-scope` | `off` |
+| `react/prop-types` | `off` |
+| `react-hooks/rules-of-hooks` | `error` |
+| `react-hooks/exhaustive-deps` | `warn` |
+| `import/order` | `error` (alphabetical, newlines between groups) |
+| `import/no-duplicates` | `error` |
+
+**Ignored:** `**/dist/**`, `**/node_modules/**`, `**/*.d.ts`, `shared/scripts/**`, `**/package-lock.json`
+
+### Prettier
+
+Config: `.prettierrc.json`
+
+```json
+{
+    "trailingComma": "es5",
+    "printWidth": 120,
+    "singleQuote": true,
+    "tabWidth": 4,
+    "useTabs": false
+}
 ```
 
-Enables `import { createResolver, normalize, resolverExample } from 'shared/resolver'`.
+### EditorConfig
+
+Config: `.editorconfig`
+
+| Setting | Value |
+|---------|-------|
+| `indent_style` | `space` |
+| `indent_size` | `4` (2 for JSON/YAML) |
+| `end_of_line` | `lf` |
+| `charset` | `utf-8` |
+| `trim_trailing_whitespace` | `true` (except Markdown) |
+| `insert_final_newline` | `true` |
+
+### Pre-commit Hooks
+
+Husky + lint-staged runs on every commit:
+
+| File Type | Actions |
+|-----------|---------|
+| `*.{js,mjs,cjs,ts,jsx,tsx}` | `eslint --fix` → `prettier --write` |
+| `*.{json,css}` | `prettier --write` |
 
 ## Scripts Reference
 
@@ -722,25 +892,28 @@ Enables `import { createResolver, normalize, resolverExample } from 'shared/reso
 | Script | Command | Description |
 |--------|---------|-------------|
 | `dev` | `concurrently "dev:client" "dev:server" "dev:shared"` | Start all dev servers |
-| `dev:client` | `npm run dev --workspace=client` | Webpack dev server (port 3000) |
+| `dev:client` | `npm run dev --workspace=client` | Custom dev server (port 3000) |
 | `dev:server` | `npm run dev --workspace=server` | Express with ts-node-dev (port 3001) |
 | `dev:shared` | `npm run dev --workspace=shared` | Webpack watch mode |
-| `build` | `npm run build --workspaces` | Build all packages |
-| `build:client` | `npm run build --workspace=client` | Client production build |
+| `build` | Build all workspaces in order | Shared → Client → Server |
+| `build:client` | `npm run build --workspace=client` | Client production (mobile + desktop) |
 | `build:server` | `npm run build --workspace=server` | Server compilation |
-| `start` | `npm run start --workspace=server` | Run production server |
-| `prepare-dev` | Complex multi-step | Full environment setup |
-| `clear` | Remove node_modules + dist | Clean everything |
-| `clear:node_modules` | Remove all node_modules | Clean dependencies |
-| `clear:dist` | Remove all dist | Clean build artifacts |
+| `start` | `npm run start --workspace=server` | Run production server (port 3001) |
+| `prepare` | `husky` | Install git hooks |
+| `lint` | `eslint .` | Check all files |
+| `lint:fix` | `eslint . --fix` | Auto-fix ESLint issues |
+| `format` | `prettier --write` | Format all files |
+| `format:check` | `prettier --check` | Check formatting |
+| `clear` | `rm -rf` all node_modules and dist | Clean everything |
 
 ### Client Package
 
 | Script | Command |
 |--------|---------|
-| `dev` | `webpack serve --mode development --config webpack.dev.config.ts` |
+| `dev` | `node dev-server.mjs` |
 | `build` | `webpack --mode production --config webpack.prod.config.ts` |
-| `serve` | `npx http-server dist -p 3000 --cors` |
+| `build:mobile` | `webpack --mode production --config webpack.prod.config.ts --config-name mobile` |
+| `build:desktop` | `webpack --mode production --config webpack.prod.config.ts --config-name desktop` |
 
 ### Server Package
 
@@ -754,28 +927,28 @@ Enables `import { createResolver, normalize, resolverExample } from 'shared/reso
 
 | Script | Command | Description |
 |--------|---------|-------------|
-| `build` | `clean && webpack && build:types` | Full build |
-| `build:client` | `clean && webpack --env target=client && build:types` | Client only |
-| `build:server` | `clean && webpack --env target=server && build:types` | Server only |
+| `build` | `clean && gen:exports && webpack && build:types` | Full build |
+| `gen:exports` | `node scripts/generate-exports.mjs` | Auto-generate package.json exports |
 | `build:types` | `node scripts/distribute-types.mjs` | Generate + distribute types |
-| `dev` | `webpack --watch` | Watch mode |
+| `watch:types` | `tsc --project tsconfig.types.json --watch` | Watch type declarations |
+| `dev` | `gen:exports && build:types && watch (tsc + distribute + webpack)` | Watch mode |
 | `clean` | `rimraf dist` | Remove output |
 
 ## Dependency Graph
 
 ```
 root (project)
-├── devDependencies: concurrently, typescript, @reduxjs/toolkit, react-redux
+├── devDependencies: concurrently, typescript, eslint, prettier, husky, lint-staged
 │
 ├── client (workspace)
-│   ├── dependencies: react, react-dom, typescript, @types/*, eslint, prettier
-│   ├── devDependencies: webpack, babel, ts-loader, css-loader, html-webpack-plugin
+│   ├── dependencies: react, react-dom, react-router-dom, redux-toolkit, react-redux
+│   ├── devDependencies: webpack, ts-loader, css-loader, html-webpack-plugin
 │   └── depends on → shared (file:../shared)
 │
 ├── server (workspace)
-│   ├── dependencies: express, cors, dotenv
-│   ├── devDependencies: ts-node-dev, typescript, @types/express, @types/cors
-│   └── depends on → shared (file:../shared)
+│   ├── dependencies: express, cors, swagger-ui-express, swagger-jsdoc, express-useragent
+│   ├── devDependencies: ts-node-dev, typescript, @types/*
+│   └── depends on → shared (file:../shared/dist/server)
 │
 └── shared (workspace)
     ├── devDependencies: webpack, ts-loader, typescript, glob, rimraf
@@ -785,19 +958,20 @@ root (project)
 **Data Flow:**
 
 ```
-Client App
+Client App (port 3000)
     │
     ├── imports shared/constants  ──► dist/client/constants/index.js (ESM)
     ├── imports shared/resolver   ──► dist/client/resolver/index.js (ESM)
-    └── imports shared            ──► dist/client/index.js (ESM)
+    ├── imports shared/utils      ──► dist/client/utils/index.js (ESM)
+    └── imports shared/auth       ──► dist/client/auth/index.js (ESM)
                                           │
                                           │ fetches
                                           ▼
-                                     Server API (port 3001)
+                                      Server API (port 3001)
                                           │
-                                          ├── imports shared/constants  ──► dist/server/constants/index.cjs (CJS)
-                                          ├── imports shared/resolver   ──► dist/server/resolver/index.cjs (CJS)
-                                          └── imports shared            ──► dist/server/index.cjs (CJS)
+                                          ├── imports shared  ──► dist/server/index.cjs (CJS)
+                                          ├── imports shared/auth  ──► dist/server/auth/index.cjs (CJS)
+                                          └── imports shared/resolver/examples  ──► dist/server/resolver/examples.cjs
 ```
 
 ## Development Workflow
@@ -809,7 +983,7 @@ Client App
    - `shared/src/myModule.client.ts` → client only
    - `shared/src/myModule.server.ts` → server only
 
-2. Export from the appropriate index file (`shared/src/index.ts` or `shared/src/resolver/index.ts`)
+2. If it's a new top-level directory, create `shared/src/myModule/index.ts` with exports
 
 3. Rebuild shared: `npm run build --workspace=shared`
 
@@ -823,7 +997,22 @@ Client App
 
 1. Add route handler in `server/src/index.ts`
 2. Use shared types: `import { User, ApiResponse } from 'shared'`
-3. Rebuild server: `npm run build --workspace=server`
+3. Add JSDoc `@openapi` block for Swagger documentation
+4. Rebuild server: `npm run build --workspace=server`
+
+### Adding a Platform-Specific Client Component
+
+1. Create platform-specific file:
+   - `src/Component.mobile.tsx` → mobile only
+   - `src/Component.desktop.tsx` → desktop only
+   - `src/Component.tsx` → both (fallback)
+
+2. Import normally in other files:
+   ```typescript
+   import Component from './Component';
+   ```
+
+3. The build system automatically resolves to the correct file based on the platform being built.
 
 ### Adding a New Widget
 
@@ -852,4 +1041,8 @@ cat shared/dist/server/constants/index.d.ts
 
 # Verify package exports resolution:
 node -e "console.log(require.resolve('shared', {paths: ['server/']}))"
+
+# Check client dist output:
+ls -la client/dist/mobile/
+ls -la client/dist/desktop/
 ```
