@@ -35,7 +35,7 @@
 
 ## Project Overview
 
-A full-stack monorepo application with shared type-safe code between a React frontend and an Express backend. The project uses npm workspaces to manage three packages: `client`, `server`, and `shared`.
+A full-stack monorepo application with shared type-safe code between a React frontend and an Express backend. The project uses pnpm workspaces to manage three packages: `client`, `server`, and `shared`.
 
 Key features:
 - **Platform-specific client builds** — separate mobile and desktop bundles built from the same source
@@ -47,14 +47,14 @@ Key features:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                        Monorepo Root                          │
-│  (npm workspaces, ESLint flat config, Prettier, Husky)       │
+│                        Monorepo Root                         │
+│  (pnpm workspaces, ESLint flat config, Prettier, Husky)      │
 ├──────────────────┬──────────────────┬────────────────────────┤
 │     Client       │      Shared      │       Server           │
 │   (React 18)     │   (Webpack +     │     (Express)          │
 │   Webpack 5      │    TypeScript)   │     ts-node-dev        │
 │   Redux TK       │                  │     tsc                │
-└────────┬─────────┴────────┬─────────┴──────────┬─────────────┘
+└────────┬─────────┴────────┬─────────┴───────────┬────────────┘
          │                  │                     │
     ┌────┴────┐             │                     │
     │         │             │                     │
@@ -75,7 +75,10 @@ Conditional exports in `shared/package.json` route imports automatically.
 
 ```
 Project/
-├── package.json                  # Root workspace config
+├── package.json                  # Root package config
+├── pnpm-workspace.yaml           # pnpm workspace definition
+├── pnpm-lock.yaml                # pnpm lockfile
+├── .npmrc                        # pnpm configuration
 ├── tsconfig.json                 # Base TypeScript configuration
 ├── .prettierrc.json              # Code formatting rules (4 spaces, single quotes)
 ├── .editorconfig                 # Editor-agnostic formatting
@@ -148,7 +151,7 @@ Project/
 | **Frontend** | React 18, TypeScript, Webpack 5, Redux Toolkit, react-router-dom v7 |
 | **Backend** | Express, TypeScript, ts-node-dev, CORS, Swagger, express-useragent |
 | **Shared** | Webpack 5 (dual-target), TypeScript |
-| **Monorepo** | npm workspaces, concurrently |
+| **Monorepo** | pnpm workspaces, concurrently |
 | **Tooling** | ESLint v9 (flat config), Prettier, Husky, lint-staged |
 
 ## Getting Started
@@ -156,61 +159,64 @@ Project/
 ### Prerequisites
 
 - Node.js >= 18
-- npm >= 9
+- pnpm >= 9 (install: `corepack enable` or `npm install -g pnpm`)
 
 ### Initial Setup
 
 ```bash
 # Install all dependencies across workspaces
-npm install
+pnpm install
 
 # Build shared package (required before client/server can import it)
-npm run build --workspace=shared
+pnpm --filter shared run build
+
+# Or use the bootstrap command (install + build shared)
+pnpm run prepare-dev
 ```
 
 ### Development
 
 ```bash
 # Start all dev servers concurrently
-npm run dev
+pnpm run dev
 #   client:  http://localhost:3000 (custom Express dev server, mobile + desktop)
 #   server:  http://localhost:3001 (Express API)
 #   shared:  watch mode (webpack + types)
 
 # Start individual packages:
-npm run dev:client    # Custom dev server on port 3000 (both platforms)
-npm run dev:server    # Express with ts-node-dev on port 3001
-npm run dev:shared    # Webpack watch mode for shared
+pnpm --filter client run dev    # Custom dev server on port 3000 (both platforms)
+pnpm --filter server run dev    # Express with ts-node-dev on port 3001
+pnpm --filter shared run dev    # Webpack watch mode for shared
 ```
 
 ### Production Build
 
 ```bash
 # Build everything (shared → client → server)
-npm run build
+pnpm run build
 
 # Or individually:
-npm run build:shared   # Build shared (webpack + types)
-npm run build:client   # Build client (webpack: mobile + desktop)
-npm run build:server   # Build server (tsc)
+pnpm --filter shared run build   # Build shared (webpack + types)
+pnpm --filter client run build   # Build client (webpack: mobile + desktop)
+pnpm --filter server run build   # Build server (tsc)
 
 # Start production server (serves both platforms on port 3001)
-npm start
+pnpm start
 ```
 
 ### Linting and Formatting
 
 ```bash
-npm run lint              # Check all files
-npm run lint:fix          # Auto-fix ESLint issues
-npm run format            # Format all files with Prettier
-npm run format:check      # Check formatting without modifying
+pnpm run lint              # Check all files
+pnpm run lint:fix          # Auto-fix ESLint issues
+pnpm run format            # Format all files with Prettier
+pnpm run format:check      # Check formatting without modifying
 ```
 
 ### Cleanup
 
 ```bash
-npm run clear             # Remove all node_modules and dist directories
+pnpm run clear             # Remove all node_modules and dist directories
 ```
 
 ## Build System
@@ -250,11 +256,11 @@ The shared package has a multi-stage build process:
 **Commands:**
 
 ```bash
-npm run build          # Full build: clean → gen:exports → webpack → types
-npm run gen:exports    # Generate package.json exports field
-npm run build:types    # Type generation and distribution only
-npm run dev            # gen:exports → types → watch (webpack + tsc + distribute)
-npm run clean          # rimraf dist
+pnpm run build          # Full build: clean → gen:exports → webpack → types
+pnpm --filter shared run gen:exports    # Generate package.json exports field
+pnpm --filter shared run build:types    # Type generation and distribution only
+pnpm --filter shared run dev            # gen:exports → types → watch (webpack + tsc + distribute)
+pnpm --filter shared run clean          # rimraf dist
 ```
 
 ### Client Package
@@ -359,9 +365,8 @@ The server uses `express-useragent` middleware to parse the User-Agent header:
 ```typescript
 app.use(expressUseragent.express());
 
-function getDeviceType(req): 'mobile' | 'tablet' | 'desktop' {
+function getDeviceType(req): 'mobile' | 'desktop' {
     if (req.useragent?.isMobile) return 'mobile';
-    if (req.useragent?.isTablet) return 'tablet';
     return 'desktop';
 }
 ```
@@ -847,7 +852,7 @@ Root config: `eslint.config.js`
 | `import/order` | `error` (alphabetical, newlines between groups) |
 | `import/no-duplicates` | `error` |
 
-**Ignored:** `**/dist/**`, `**/node_modules/**`, `**/*.d.ts`, `shared/scripts/**`, `**/package-lock.json`
+**Ignored:** `**/dist/**`, `**/node_modules/**`, `**/*.d.ts`, `shared/scripts/**`, `**/pnpm-lock.yaml`
 
 ### Prettier
 
@@ -892,19 +897,20 @@ Husky + lint-staged runs on every commit:
 | Script | Command | Description |
 |--------|---------|-------------|
 | `dev` | `concurrently "dev:client" "dev:server" "dev:shared"` | Start all dev servers |
-| `dev:client` | `npm run dev --workspace=client` | Custom dev server (port 3000) |
-| `dev:server` | `npm run dev --workspace=server` | Express with ts-node-dev (port 3001) |
-| `dev:shared` | `npm run dev --workspace=shared` | Webpack watch mode |
+| `dev:client` | `pnpm --filter client run dev` | Custom dev server (port 3000) |
+| `dev:server` | `pnpm --filter server run dev` | Express with ts-node-dev (port 3001) |
+| `dev:shared` | `pnpm --filter shared run dev` | Webpack watch mode |
 | `build` | Build all workspaces in order | Shared → Client → Server |
-| `build:client` | `npm run build --workspace=client` | Client production (mobile + desktop) |
-| `build:server` | `npm run build --workspace=server` | Server compilation |
-| `start` | `npm run start --workspace=server` | Run production server (port 3001) |
+| `build:client` | `pnpm --filter client run build` | Client production (mobile + desktop) |
+| `build:server` | `pnpm --filter server run build` | Server compilation |
+| `start` | `pnpm --filter server run start` | Run production server (port 3001) |
 | `prepare` | `husky` | Install git hooks |
 | `lint` | `eslint .` | Check all files |
 | `lint:fix` | `eslint . --fix` | Auto-fix ESLint issues |
 | `format` | `prettier --write` | Format all files |
 | `format:check` | `prettier --check` | Check formatting |
 | `clear` | `rm -rf` all node_modules and dist | Clean everything |
+| `prepare-dev` | `pnpm install && pnpm --filter shared run build` | Bootstrap from scratch |
 
 ### Client Package
 
@@ -942,13 +948,13 @@ root (project)
 │
 ├── client (workspace)
 │   ├── dependencies: react, react-dom, react-router-dom, redux-toolkit, react-redux
-│   ├── devDependencies: webpack, ts-loader, css-loader, html-webpack-plugin
-│   └── depends on → shared (file:../shared)
+│   ├── devDependencies: webpack, ts-loader, css-loader, html-webpack-plugin, express, express-useragent
+│   └── depends on → shared (workspace:*)
 │
 ├── server (workspace)
 │   ├── dependencies: express, cors, swagger-ui-express, swagger-jsdoc, express-useragent
 │   ├── devDependencies: ts-node-dev, typescript, @types/*
-│   └── depends on → shared (file:../shared/dist/server)
+│   └── depends on → shared (workspace:*)
 │
 └── shared (workspace)
     ├── devDependencies: webpack, ts-loader, typescript, glob, rimraf
@@ -985,7 +991,7 @@ Client App (port 3000)
 
 2. If it's a new top-level directory, create `shared/src/myModule/index.ts` with exports
 
-3. Rebuild shared: `npm run build --workspace=shared`
+3. Rebuild shared: `pnpm --filter shared run build`
 
 4. Import in client or server:
    ```typescript
@@ -998,7 +1004,7 @@ Client App (port 3000)
 1. Add route handler in `server/src/index.ts`
 2. Use shared types: `import { User, ApiResponse } from 'shared'`
 3. Add JSDoc `@openapi` block for Swagger documentation
-4. Rebuild server: `npm run build --workspace=server`
+4. Rebuild server: `pnpm --filter server run build`
 
 ### Adding a Platform-Specific Client Component
 

@@ -9,14 +9,14 @@ Full-stack monorepo with a React frontend, Express backend, and shared type-safe
 ## Quick Start
 
 ```bash
-# 1. Install and set up
-npm run prepare-dev
+# 1. Install and set up (installs deps + builds shared)
+pnpm run prepare-dev
 
-# 2. Build shared package (required first step)
-npm run build --workspace=shared
+# 2. Build everything (shared → client → server)
+pnpm run build
 
 # 3. Start dev servers
-npm run dev
+pnpm run dev
 ```
 
 | Service | URL | Notes |
@@ -29,11 +29,13 @@ npm run dev
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start all dev servers (client, server, shared watch) |
-| `npm run build` | Build everything (shared → client → server) |
-| `npm start` | Run production server (port 3001, serves both platforms) |
-| `npm run lint` | Check code with ESLint |
-| `npm run format` | Format code with Prettier |
+| `pnpm run dev` | Start all dev servers (client, server, shared watch) |
+| `pnpm run build` | Build everything (shared → client → server) |
+| `pnpm start` | Run production server (port 3001, serves both platforms) |
+| `pnpm run lint` | Check code with ESLint |
+| `pnpm run format` | Format code with Prettier |
+| `pnpm run clear` | Remove all node_modules and dist directories |
+| `pnpm run prepare-dev` | Install deps + build shared (bootstrap from scratch) |
 
 ## Project Structure
 
@@ -79,7 +81,7 @@ examples.server.ts  → dist/server/resolver/examples.cjs (CJS)
 ## Adding Shared Code
 
 1. Create file in `shared/src/` (or a new subdirectory with `index.ts`)
-2. Rebuild: `npm run build --workspace=shared`
+2. Rebuild: `pnpm --filter shared run build`
 3. Import anywhere:
 
 ```typescript

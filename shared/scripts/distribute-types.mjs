@@ -10,7 +10,7 @@ const typesDir = path.resolve(rootDir, 'dist/_types');
 
 // Step 1: Generate declarations with tsc
 console.log('Generating type declarations...');
-execSync('npx tsc --ignoreDeprecations 6.0 --emitDeclarationOnly --declaration --declarationMap --outDir dist/_types', {
+execSync('npx tsc --emitDeclarationOnly --declaration --declarationMap --outDir dist/_types', {
     cwd: rootDir,
     stdio: 'inherit',
 });

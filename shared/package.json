@@ -10,12 +10,12 @@
     "exports": {
         ".": {
             "types": {
-                "import": "./dist/client//index.d.ts",
-                "require": "./dist/server//index.d.ts"
+                "import": "./dist/client/index.d.ts",
+                "require": "./dist/server/index.d.ts"
             },
-            "import": "./dist/client//index.js",
-            "require": "./dist/server//index.cjs",
-            "default": "./dist/client//index.js"
+            "import": "./dist/client/index.js",
+            "require": "./dist/server/index.cjs",
+            "default": "./dist/client/index.js"
         },
         "./auth": {
             "types": {
@@ -73,11 +73,11 @@
         }
     },
     "scripts": {
-        "build": "npm run clean && npm run gen:exports && webpack && npm run build:types",
+        "build": "pnpm clean && pnpm gen:exports && webpack && pnpm build:types",
         "gen:exports": "node scripts/generate-exports.mjs",
         "build:types": "node scripts/distribute-types.mjs",
         "watch:types": "tsc --project tsconfig.types.json --watch",
-        "dev": "npm run gen:exports && npm run build:types && (tsc --project tsconfig.types.json --watch & node scripts/watch-types.mjs & webpack --watch)",
+        "dev": "pnpm gen:exports && pnpm build:types && (tsc --project tsconfig.types.json --watch & node scripts/watch-types.mjs & webpack --watch)",
         "clean": "rimraf dist"
     },
     "devDependencies": {

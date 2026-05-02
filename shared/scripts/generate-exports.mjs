@@ -12,14 +12,15 @@ const srcDir = path.resolve(rootDir, 'src');
 
 function makeExport(basePath, isWildcard = false) {
     const ext = isWildcard ? '*' : 'index';
+    const normalized = basePath ? `${basePath}/` : '';
     return {
         types: {
-            import: `./dist/client/${basePath}/${ext}.d.ts`,
-            require: `./dist/server/${basePath}/${ext}.d.ts`,
+            import: `./dist/client/${normalized}${ext}.d.ts`,
+            require: `./dist/server/${normalized}${ext}.d.ts`,
         },
-        import: `./dist/client/${basePath}/${ext}.js`,
-        require: `./dist/server/${basePath}/${ext}.cjs`,
-        default: `./dist/client/${basePath}/${ext}.js`,
+        import: `./dist/client/${normalized}${ext}.js`,
+        require: `./dist/server/${normalized}${ext}.cjs`,
+        default: `./dist/client/${normalized}${ext}.js`,
     };
 }
 

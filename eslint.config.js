@@ -75,6 +75,6 @@ export default [
         },
     },
     {
-        ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', 'shared/scripts/**', '**/package-lock.json'],
+        ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', 'shared/scripts/**', '**/pnpm-lock.yaml'],
     },
 ];
