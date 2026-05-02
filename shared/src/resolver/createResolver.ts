@@ -21,11 +21,6 @@ type Runner<Params, CollectionType> = (
     ? ReturnType<Func<Params, CollectionType>>
     : Promisable<ReturnType<Func<Params, CollectionType>>>;
 
-type _ArgFunc<Params, CollectionType> = (
-    callback: Func<Params, CollectionType>,
-    options: ResolverOptions
-) => Runner<Params, CollectionType>;
-
 const CTX = {
     isServer: !process.env.CLIENT,
 };
