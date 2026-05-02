@@ -1,13 +1,19 @@
 import path from 'path';
 
+import { swaggerSpec } from '@swagger';
 import cors from 'cors';
 import express, { Request, Response } from 'express';
+import * as expressUseragent from 'express-useragent';
 import { formatUser, User, VERSION } from 'shared';
 import { RegisterRequest, AuthResponse } from 'shared/auth';
 import { NAME } from 'shared/resolver/examples';
 import swaggerUi from 'swagger-ui-express';
 
-import { swaggerSpec } from './swagger';
+function getDeviceType(req: Request): 'mobile' | 'tablet' | 'desktop' {
+    if (req.useragent?.isMobile) return 'mobile';
+    if (req.useragent?.isTablet) return 'tablet';
+    return 'desktop';
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +27,7 @@ const whiteList = {
 // Middleware
 app.use(cors(whiteList));
 app.use(express.json());
+app.use(expressUseragent.express());
 
 // Swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -49,7 +56,55 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'OK', version: VERSION });
+    res.json({
+        status: 'OK',
+        version: VERSION,
+        device: getDeviceType(req),
+        platform: req.useragent.platform,
+        browser: req.useragent.browser,
+    });
+});
+
+/**
+ * @openapi
+ * /device:
+ *   get:
+ *     tags: [Device]
+ *     summary: Detect client device type
+ *     responses:
+ *       200:
+ *         description: Device information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   enum: [mobile, tablet, desktop]
+ *                 platform:
+ *                   type: string
+ *                 browser:
+ *                   type: string
+ *                 isMobile:
+ *                   type: boolean
+ *                 isTablet:
+ *                   type: boolean
+ *                 isDesktop:
+ *                   type: boolean
+ */
+
+// Device detection
+app.get('/device', (req: Request, res: Response) => {
+    res.json({
+        type: getDeviceType(req),
+        platform: req.useragent.platform,
+        browser: req.useragent.browser,
+        isMobile: req.useragent.isMobile,
+        isTablet: req.useragent.isTablet,
+        isDesktop: req.useragent.isDesktop,
+        source: req.useragent.source,
+    });
 });
 
 /**
