@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, formatUser, VERSION } from 'shared/constants';
 import { NAME } from 'shared/resolver/examples';
 import { CLIENT } from '@config';
 import { ViewExample } from '@widget/example';
+import { RegisterForm } from '@widget/RegisterForm';
 
 const users: User[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com' },
@@ -17,6 +18,13 @@ function UserList() {
                 Module Federation App v{VERSION} | CLIENT:{JSON.stringify(CLIENT)} | NAME:{NAME}
             </h1>
             <ViewExample example={777} />
+            <RegisterForm
+                onRegistered={(user) => {
+                    if (user) {
+                        users.push(user);
+                    }
+                }}
+            />
             <h2>Users</h2>
             <ul>
                 {users.map((user) => (

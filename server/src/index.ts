@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { formatUser, User, VERSION } from 'shared';
 import { NAME } from 'shared/resolver/examples';
+import { RegisterRequest, AuthResponse } from 'shared/auth';
 import path from 'path';
 
 const app = express();
@@ -50,6 +51,49 @@ app.get('/users/:id', (req: Request, res: Response) => {
             error: 'User not found',
         });
     }
+});
+
+// Register
+app.post('/auth/register', (req: Request, res: Response) => {
+    const { name, email, password }: RegisterRequest = req.body;
+
+    if (!name || !email || !password) {
+        res.status(400).json({
+            success: false,
+            error: 'Name, email and password are required',
+        } satisfies AuthResponse);
+        return;
+    }
+
+    if (password.length < 6) {
+        res.status(400).json({
+            success: false,
+            error: 'Password must be at least 6 characters',
+        } satisfies AuthResponse);
+        return;
+    }
+
+    const existing = users.find((u) => u.email === email);
+    if (existing) {
+        res.status(409).json({
+            success: false,
+            error: 'User with this email already exists',
+        } satisfies AuthResponse);
+        return;
+    }
+
+    const newUser: User = {
+        id: Date.now().toString(),
+        name,
+        email,
+    };
+
+    users.push(newUser);
+
+    res.status(201).json({
+        success: true,
+        user: newUser,
+    } satisfies AuthResponse);
 });
 
 // Create user

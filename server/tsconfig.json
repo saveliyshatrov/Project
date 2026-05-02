@@ -1,21 +1,17 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
     "target": "ES2020",
     "lib": ["ES2020"],
     "esModuleInterop": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "shared": [
-        "../shared/dist/server/index.cjs"
-      ],
-      "shared/*": [
-        "../shared/dist/server/*"
-      ],
+      "shared": ["../shared/dist/server/index.d.ts"],
+      "shared/*": ["../shared/dist/server/*"],
       "@*": ["src/*"]
     }
   },

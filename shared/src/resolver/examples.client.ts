@@ -1,1 +1,1 @@
-export const NAME = 'FAKE_NAME';
+export const NAME = 'CLIENT_NAME';

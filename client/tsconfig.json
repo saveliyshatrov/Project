@@ -5,7 +5,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "shared/*": ["node_modules/shared/*"],
       "@*": ["*"]
     }
   },
