@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Link, useParams } from 'react-router-dom';
 import { User, formatUser, VERSION } from 'shared/constants';
 import { NAME } from 'shared/resolver/examples';
 import { CLIENT } from '@config';
@@ -13,7 +14,7 @@ const users: User[] = [
 
 function UserList() {
     return (
-        <div style={{ padding: '20px' }}>
+        <div>
             <h1>
                 Module Federation App v{VERSION} | CLIENT:{JSON.stringify(CLIENT)} | NAME:{NAME}
             </h1>
@@ -28,13 +29,39 @@ function UserList() {
             <h2>Users</h2>
             <ul>
                 {users.map((user) => (
-                    <li key={user.id}>{formatUser(user)}</li>
+                    <li key={user.id}>
+                        <Link to={`/users/${user.id}`}>{formatUser(user)}</Link>
+                    </li>
                 ))}
             </ul>
         </div>
     );
 }
 
+function UserDetail() {
+    const { userId } = useParams<{ userId: string }>();
+    const user = users.find((u) => u.id === userId);
+
+    return (
+        <div>
+            <Link to="/">← Back to users</Link>
+            <h2>User Detail</h2>
+            {user ? (
+                <p>{formatUser(user)}</p>
+            ) : (
+                <p>User with ID <strong>{userId}</strong> not found</p>
+            )}
+        </div>
+    );
+}
+
 export default function App() {
-    return <UserList />;
+    return (
+        <div style={{ padding: '20px' }}>
+            <Routes>
+                <Route path="/" element={<UserList />} />
+                <Route path="/users/:userId" element={<UserDetail />} />
+            </Routes>
+        </div>
+    );
 }
