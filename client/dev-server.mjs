@@ -29,6 +29,19 @@ const desktopCompiler = webpack(desktopConfig);
 mobileCompiler.watch({}, () => {});
 desktopCompiler.watch({}, () => {});
 
+const API_URL = process.env.API_URL || 'http://localhost:3001';
+
+app.use('/resolver', async (req, res) => {
+    try {
+        const query = new URLSearchParams(req.query);
+        const response = await fetch(`${API_URL}/resolver?${query.toString()}`);
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch {
+        res.status(502).json({ error: 'Failed to reach API server' });
+    }
+});
+
 app.use('/dist/mobile', express.static(path.join(__dirname, 'dist/mobile')));
 app.use('/dist/desktop', express.static(path.join(__dirname, 'dist/desktop')));
 

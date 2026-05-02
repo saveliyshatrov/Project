@@ -5,6 +5,7 @@ import express, { Request, Response } from 'express';
 import * as expressUseragent from 'express-useragent';
 import { formatUser, User, VERSION } from 'shared';
 import { RegisterRequest, AuthResponse } from 'shared/auth';
+import { resolverRegistry } from 'shared/resolver';
 import { NAME } from 'shared/resolver/examples';
 import { DeviceType } from 'shared/utils/getDeviceType';
 import swaggerUi from 'swagger-ui-express';
@@ -339,6 +340,33 @@ app.post('/users', (req: Request, res: Response) => {
         success: true,
         data: formatUser(newUser),
     });
+});
+
+// Resolver endpoint
+app.get('/resolver', async (req: Request, res: Response) => {
+    const { resolver, params } = req.query;
+
+    if (!resolver || typeof resolver !== 'string') {
+        res.status(400).json({ success: false, error: 'Missing resolver name' });
+        return;
+    }
+
+    const entry = resolverRegistry.get(resolver);
+    if (!entry) {
+        res.status(404).json({ success: false, error: `Resolver "${resolver}" not found` });
+        return;
+    }
+
+    try {
+        const parsedParams = params ? JSON.parse(params as string) : {};
+        const result = await entry.func({ isServer: true }, parsedParams);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
 });
 
 // Serve static files from client dist

@@ -12,7 +12,12 @@
         "forceConsistentCasingInFileNames": true,
         "declaration": true,
         "declarationMap": true,
-        "types": ["node"]
+        "types": ["node"],
+        "baseUrl": ".",
+        "paths": {
+            "./createResolver": ["src/resolver/createResolver.client.ts"],
+            "./createResolver.types": ["src/resolver/createResolver.types.ts"]
+        }
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"]

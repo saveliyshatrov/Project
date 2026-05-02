@@ -71,7 +71,9 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
         devtool: false,
 
         resolve: {
-            extensions: ['.ts', '.tsx', '.js'],
+            extensions: isClient
+                ? ['.client.ts', '.client.tsx', '.ts', '.tsx', '.js']
+                : ['.server.ts', '.server.tsx', '.ts', '.tsx', '.js'],
         },
 
         module: {
@@ -93,13 +95,13 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
 
         ...(!isClient && {
             externals: [
-                ({ request }: any, callback: any) => {
+                ({ request }, callback) => {
                     if (/^[^./]/.test(request)) {
                         return callback(null, 'commonjs ' + request);
                     }
                     callback();
                 },
-            ],
+            ] as Configuration['externals'],
         }),
     };
 };

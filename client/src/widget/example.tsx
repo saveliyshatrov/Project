@@ -1,6 +1,6 @@
 import React from 'react';
 import { AUTHOR } from 'shared/constants';
-import { resolverExample } from 'shared/resolver';
+import { resolveUsers } from 'shared/resolver';
 
 import { createWidget } from './index';
 
@@ -21,7 +21,7 @@ export const ViewExample = createWidget({
     view: View,
     controller: async ({ example }: { example: number }) => {
         const name = (await new Promise((res) => setTimeout(() => res('Test name'), 5000))) as string;
-        const userCollection = await resolverExample({ collectionName: 'users' });
+        const userCollection = await resolveUsers({ limit: 10 });
         return {
             data: {
                 example,
