@@ -9,44 +9,37 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/server/index.d.ts",
+      "types": "./dist/client/index.d.ts",
       "import": "./dist/client/index.js",
       "require": "./dist/server/index.cjs",
       "default": "./dist/client/index.js"
     },
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "default": "./dist/client/index.js"
-    },
-    "./server": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.cjs"
-    },
     "./constants": {
-      "types": "./dist/server/constants/index.d.ts",
+      "types": "./dist/client/constants/index.d.ts",
       "import": "./dist/client/constants/index.js",
       "require": "./dist/server/constants/index.cjs",
       "default": "./dist/client/constants/index.js"
     },
     "./resolver": {
-      "types": "./dist/server/resolver/index.d.ts",
+      "types": "./dist/client/resolver/index.d.ts",
       "import": "./dist/client/resolver/index.js",
       "require": "./dist/server/resolver/index.cjs",
       "default": "./dist/client/resolver/index.js"
     },
     "./resolver/*": {
-      "types": "./dist/server/resolver/*.d.ts",
+      "types": "./dist/client/resolver/*.d.ts",
       "import": "./dist/client/resolver/*.js",
       "require": "./dist/server/resolver/*.cjs",
-      "default": "./dist/server/resolver/*.cjs"
+      "default": "./dist/client/resolver/*.js"
     }
   },
   "scripts": {
-    "build": "npm run clean && webpack && npm run build:types",
-    "build:client": "npm run clean && webpack --env target=client && npm run build:types",
-    "build:server": "npm run clean && webpack --env target=server && npm run build:types",
+    "build": "npm run clean && npm run gen:exports && webpack && npm run build:types",
+    "build:client": "npm run clean && npm run gen:exports && webpack --env target=client && npm run build:types",
+    "build:server": "npm run clean && npm run gen:exports && webpack --env target=server && npm run build:types",
+    "gen:exports": "node scripts/generate-exports.mjs",
     "build:types": "node scripts/distribute-types.mjs",
-    "dev": "webpack --watch",
+    "dev": "npm run gen:exports && webpack --watch",
     "clean": "rimraf dist"
   },
   "devDependencies": {
