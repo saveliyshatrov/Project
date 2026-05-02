@@ -117,31 +117,36 @@ Project/
 │       ├── index.ts              # Express app + API endpoints
 │       └── swagger.ts            # Swagger/OpenAPI spec
 │
-└── shared/                       # Shared code (client + server)
-    ├── package.json
-    ├── tsconfig.json
-    ├── tsconfig.types.json       # Declaration-only compilation
-    ├── webpack.config.ts         # Dual-target webpack build
-    ├── scripts/
-    │   ├── generate-exports.mjs  # Auto-generates package.json exports
-    │   ├── distribute-types.mjs  # Type declaration distribution
-    │   └── watch-types.mjs       # Watch mode for type distribution
-    └── src/
-        ├── index.ts              # Shared re-exports
-        ├── auth/
-        │   └── index.ts          # Auth interfaces (RegisterRequest, AuthResponse)
-        ├── constants/
-        │   └── index.ts          # Constants, types, helpers
-        ├── resolver/
-        │   ├── index.ts          # Resolver re-exports
-        │   ├── createResolver.ts # Resolver factory
-        │   ├── example.ts        # Example resolver
-        │   ├── normalize.ts      # Data normalization utility
-        │   ├── examples.client.ts # Client-only export
-        │   └── examples.server.ts # Server-only export
-        └── utils/
-            ├── index.ts          # Utils re-exports
-            └── getDeviceType.ts  # DeviceType enum
+    └── shared/                       # Shared code (client + server)
+        ├── package.json
+        ├── tsconfig.json
+        ├── tsconfig.types.json       # Declaration-only compilation
+        ├── webpack.config.ts         # Dual-target webpack build
+        ├── scripts/
+        │   ├── generate-exports.mjs  # Auto-generates package.json exports
+        │   ├── distribute-types.mjs  # Type declaration distribution
+        │   └── watch-types.mjs       # Watch mode for type distribution
+        └── src/
+            ├── index.ts              # Shared re-exports
+            ├── auth/
+            │   └── index.ts          # Auth interfaces (RegisterRequest, AuthResponse)
+            ├── constants/
+            │   └── index.ts          # Constants, types, helpers
+            ├── resolver/
+            │   ├── index.ts          # Resolver re-exports
+            │   ├── createResolver.client.ts # Client: fetch proxy stub
+            │   ├── createResolver.server.ts # Server: registry + execution
+            │   ├── createResolver.d.ts      # TypeScript types only
+            │   ├── example.ts        # Example resolver
+            │   ├── normalize.ts      # Data normalization utility
+            │   ├── examples.client.ts # Client-only export
+            │   ├── examples.server.ts # Server-only export
+            │   ├── resolveUsers.client.ts # Client stub (no data)
+            │   ├── resolveUsers.server.ts # Server implementation (real data)
+            │   └── resolveUsers.d.ts  # TypeScript types
+            └── utils/
+                ├── index.ts          # Utils re-exports
+                └── getDeviceType.ts  # DeviceType enum
 ```
 
 ## Technology Stack
@@ -256,7 +261,7 @@ The shared package has a multi-stage build process:
 **Commands:**
 
 ```bash
-pnpm run build          # Full build: clean → gen:exports → webpack → types
+pnpm run build                          # Full build: clean → gen:exports → webpack → types
 pnpm --filter shared run gen:exports    # Generate package.json exports field
 pnpm --filter shared run build:types    # Type generation and distribution only
 pnpm --filter shared run dev            # gen:exports → types → watch (webpack + tsc + distribute)
@@ -699,14 +704,27 @@ export const ViewExample = createWidget({
 
 ## Resolver System
 
-The resolver system provides a unified pattern for data fetching that works on both client and server.
+The resolver system provides a unified pattern for data fetching where **all resolver logic executes only on the server**. The client receives a lightweight stub that fetches from the `/resolver` endpoint, ensuring zero server-side code or data in client bundles.
+
+### Architecture
+
+```
+Client                          Server
+──────                          ──────
+resolveUsers()                  resolveUsers()
+    │   (stub: fetch)                │
+    ├──────────────────────────────► │
+    │   GET /resolver?resolver=...   │
+    │                                ├──► execute registered resolver
+    │                                ├──► normalize data
+    │                                └──► return JSON
+    │◄───────────────────────────────┤
+    └─── Promise<Collections> ──────┘
+```
 
 ### createResolver
 
-`shared/src/resolver/createResolver.ts`
-
-A factory function that wraps data-fetching functions with platform context.
-
+`shared/src/resolver/createResolver.client.ts` — Client stub (~464 bytes):
 ```typescript
 export function createResolver<Params, CollectionType>(
     func: Func<Params, CollectionType>,
@@ -714,24 +732,35 @@ export function createResolver<Params, CollectionType>(
 ): Runner<Params, CollectionType>
 ```
 
-**Parameters:**
+The client version returns a runner that:
+1. Serializes params via URL query (`resolver` + `params`)
+2. Fetches `GET /resolver?resolver=NAME&params=...`
+3. Returns the JSON response as `Promise<Collections<CollectionType>>`
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `func` | `(ctx, params) => Collections<CollectionType> | Promise<...>` | The data-fetching function |
-| `options.name` | `string` | Resolver identifier |
-| `options.sync` | `boolean` (optional) | If `true`, the runner is synchronous |
+The `func` argument is a stub (typically `() => ({})`) — it is never executed.
+
+`shared/src/resolver/createResolver.server.ts` — Server implementation:
+```typescript
+export const resolverRegistry = new Map<string, Resolver<any, any>>();
+
+export function createResolver<Params, CollectionType>(
+    func: Func<Params, CollectionType>,
+    options: ResolverOptions
+): Runner<Params, CollectionType>
+```
+
+The server version:
+1. Wraps the provided `func` in a runner
+2. Registers it in `resolverRegistry` by `options.name`
+3. The `/resolver` endpoint looks up and executes resolvers from this registry
 
 **Context (`ctx`):**
-
 ```typescript
 {
-    isServer: boolean;  // true on server, false on client
+    isServer: boolean;  // always true on server
     [key: string]: any; // extensible
 }
 ```
-
-The `isServer` flag is determined by `!process.env.CLIENT`.
 
 ### normalize
 
@@ -754,7 +783,6 @@ export const normalize = <ArgumentType>(func: FuncNormalize<ArgumentType>) => {
 ```
 
 **Usage:**
-
 ```typescript
 const normalizeUser = normalize((user: User) => user.id);
 const result = normalizeUser(usersArray, 'users');
@@ -762,10 +790,52 @@ const result = normalizeUser(usersArray, 'users');
 ```
 
 **Type Definitions:**
-
 ```typescript
 type CollectionState<ElementType> = Record<string, ElementType>;
 type Collections<Collection> = Record<string, CollectionState<Collection>>;
+```
+
+### resolveUsers
+
+A complete resolver example with strict client/server isolation.
+
+**Client** (`resolveUsers.client.ts`):
+```typescript
+import { Collections } from './normalize.js';
+import { createResolver } from './createResolver';
+
+type ResolveUsersParams = { limit?: number; offset?: number; };
+
+export const resolveUsers = createResolver<ResolveUsersParams, Collections<unknown>>(
+    () => ({}),
+    { name: 'resolveUsers' }
+);
+```
+
+**Server** (`resolveUsers.server.ts`):
+```typescript
+import { Collections, normalize } from './normalize.js';
+import { createResolver, resolverRegistry } from './createResolver';
+
+type ResolveUsersParams = { limit?: number; offset?: number; };
+
+export const resolveUsers = createResolver<ResolveUsersParams, Collections<User>>(
+    async (ctx, params) => {
+        const users: User[] = [/* data */];
+        const filtered = users.slice(params.offset || 0, (params.offset || 0) + (params.limit || 10));
+        return normalize((user) => user.id)(filtered, 'users');
+    },
+    { name: 'resolveUsers' }
+);
+
+resolverRegistry.set('resolveUsers', resolveUsers);
+```
+
+**Types** (`resolveUsers.d.ts`):
+```typescript
+import { Collections } from './normalize.js';
+type ResolveUsersParams = { limit?: number; offset?: number; };
+export declare const resolveUsers: (params: ResolveUsersParams) => Promise<Collections<{ id: string; name: string; email: string }>>;
 ```
 
 ### Example Resolver
@@ -784,7 +854,71 @@ export const resolverExample = createResolver(
 );
 ```
 
-On the client, this resolver fetches users from the server API and normalizes them into a collection.
+### Adding a New Resolver
+
+To add a new resolver, create three files:
+
+1. **`myResolver.client.ts`** — Client stub:
+   ```typescript
+   import { Collections } from './normalize.js';
+   import { createResolver } from './createResolver';
+
+   type MyParams = { filter?: string };
+
+   export const myResolver = createResolver<MyParams, Collections<unknown>>(
+       () => ({}),
+       { name: 'myResolver' }
+   );
+   ```
+
+2. **`myResolver.server.ts`** — Server implementation:
+   ```typescript
+   import { Collections, normalize } from './normalize.js';
+   import { createResolver, resolverRegistry } from './createResolver';
+
+   type MyParams = { filter?: string };
+
+   export const myResolver = createResolver<MyParams, Collections<{ id: string }>>(
+       async (ctx, params) => {
+           const data = /* fetch from DB or API */;
+           return normalize((item) => item.id)(data, 'myCollection');
+       },
+       { name: 'myResolver' }
+   );
+
+   resolverRegistry.set('myResolver', myResolver);
+   ```
+
+3. **`myResolver.d.ts`** — Type declaration:
+   ```typescript
+   import { Collections } from './normalize.js';
+   type MyParams = { filter?: string };
+   export declare const myResolver: (params: MyParams) => Promise<Collections<{ id: string }>>;
+   ```
+
+4. Re-export from `shared/src/resolver/index.ts`:
+   ```typescript
+   export { myResolver } from './myResolver';
+   ```
+
+### Resolver Endpoint
+
+`GET /resolver?resolver=NAME&params=JSON`
+
+| Query Param | Description |
+|-------------|-------------|
+| `resolver` | Name of the resolver to execute (must be registered) |
+| `params` | JSON-serialized params object for the resolver |
+
+**Response:**
+```json
+{
+    "collectionName": {
+        "id1": { "id": "id1", ... },
+        "id2": { "id": "id2", ... }
+    }
+}
+```
 
 ## Shared Modules
 
@@ -969,15 +1103,18 @@ Client App (port 3000)
     ├── imports shared/constants  ──► dist/client/constants/index.js (ESM)
     ├── imports shared/resolver   ──► dist/client/resolver/index.js (ESM)
     ├── imports shared/utils      ──► dist/client/utils/index.js (ESM)
-    └── imports shared/auth       ──► dist/client/auth/index.js (ESM)
-                                          │
-                                          │ fetches
-                                          ▼
-                                      Server API (port 3001)
-                                          │
-                                          ├── imports shared  ──► dist/server/index.cjs (CJS)
-                                          ├── imports shared/auth  ──► dist/server/auth/index.cjs (CJS)
-                                          └── imports shared/resolver/examples  ──► dist/server/resolver/examples.cjs
+    ├── imports shared/auth       ──► dist/client/auth/index.js (ESM)
+    │
+    └── resolveUsers() ──fetch──► GET /resolver?resolver=resolveUsers
+                                      │
+                                      ▼
+                                  Server API (port 3001)
+                                      │
+                                      ├── imports shared           ──► dist/server/index.cjs (CJS)
+                                      ├── imports shared/auth      ──► dist/server/auth/index.cjs (CJS)
+                                      ├── imports shared/resolver  ──► dist/server/resolver/*.cjs
+                                      ├── resolverRegistry         ──► resolveUsers, example, etc.
+                                      └── normalize data, return JSON
 ```
 
 ## Development Workflow
@@ -991,9 +1128,11 @@ Client App (port 3000)
 
 2. If it's a new top-level directory, create `shared/src/myModule/index.ts` with exports
 
-3. Rebuild shared: `pnpm --filter shared run build`
+3. If the module is a resolver with platform-split logic, also create a `.d.ts` type declaration
 
-4. Import in client or server:
+4. Rebuild shared: `pnpm --filter shared run build`
+
+5. Import in client or server:
    ```typescript
    import { something } from 'shared';
    import { myModule } from 'shared/myModule';
@@ -1051,4 +1190,11 @@ node -e "console.log(require.resolve('shared', {paths: ['server/']}))"
 # Check client dist output:
 ls -la client/dist/mobile/
 ls -la client/dist/desktop/
+
+# Verify server logic is NOT in client bundle:
+grep "sensitive data" shared/dist/client/resolver/*.js  # should return nothing
+
+# Check resolver bundle sizes:
+wc -c shared/dist/client/resolver/resolveUsers.js   # ~130 bytes (stub only)
+wc -c shared/dist/server/resolver/resolveUsers.cjs  # ~770 bytes (real logic)
 ```
