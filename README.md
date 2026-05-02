@@ -1,10 +1,10 @@
-# React + TypeScript + Webpack + Express Monorepo
+# Project
 
-Full-stack monorepo with shared type-safe code between a React frontend and Express backend.
+Full-stack monorepo with a React frontend, Express backend, and shared type-safe code.
 
-- **Client**: React 18 + Redux Toolkit + Webpack 5 (port 3000)
-- **Server**: Express + ts-node-dev (port 3001)
-- **Shared**: Platform-specific builds — `*.client.ts` → `dist/client/` (ESM), `*.server.ts` → `dist/server/` (CJS)
+- **Client**: React 18 + Redux Toolkit + Webpack 5 — separate mobile/desktop bundles
+- **Server**: Express + Swagger + device detection (routes to correct bundle by User-Agent)
+- **Shared**: Dual-format builds — ESM for client, CJS for server
 
 ## Quick Start
 
@@ -12,90 +12,92 @@ Full-stack monorepo with shared type-safe code between a React frontend and Expr
 # 1. Install and set up
 npm run prepare-dev
 
-# 2. Start dev servers
+# 2. Build shared package (required first step)
+npm run build --workspace=shared
+
+# 3. Start dev servers
 npm run dev
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:3001 |
+| Service | URL | Notes |
+|---------|-----|-------|
+| Frontend | http://localhost:3000 | Auto-serves mobile or desktop bundle |
+| Backend API | http://localhost:3001 | Includes Swagger at `/api-docs` |
+| Device Info | http://localhost:3001/device | Returns detected device type |
+
+## Essential Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start all dev servers (client, server, shared watch) |
+| `npm run build` | Build everything (shared → client → server) |
+| `npm start` | Run production server (port 3001, serves both platforms) |
+| `npm run lint` | Check code with ESLint |
+| `npm run format` | Format code with Prettier |
+
+## Project Structure
+
+```
+client/          # React frontend
+  src/
+    App.mobile.tsx     # Mobile-specific component
+    App.desktop.tsx    # Desktop-specific component
+    App.tsx            # Fallback (used if no platform-specific file)
+    widget/            # Reusable widget components
+    store/             # Redux state management
+
+server/          # Express backend
+  src/
+    index.ts           # API routes + static file serving
+    swagger.ts         # OpenAPI documentation
+
+shared/          # Shared code (client + server)
+  src/
+    constants/         # Types, constants, helpers
+    resolver/          # Data fetching pattern
+    utils/             # Utilities (DeviceType, etc.)
+    auth/              # Auth interfaces
+```
+
+## Platform-Specific Files
+
+**Client** uses `*.mobile.tsx` / `*.desktop.tsx` — both bundles build from the same source:
+
+```
+App.tsx           → used in both builds (fallback)
+App.mobile.tsx    → used only in mobile build
+App.desktop.tsx   → used only in desktop build
+```
+
+**Shared** uses `*.client.ts` / `*.server.ts` — different outputs per platform:
+
+```
+examples.client.ts  → dist/client/resolver/examples.js (ESM)
+examples.server.ts  → dist/server/resolver/examples.cjs (CJS)
+```
+
+## Adding Shared Code
+
+1. Create file in `shared/src/` (or a new subdirectory with `index.ts`)
+2. Rebuild: `npm run build --workspace=shared`
+3. Import anywhere:
+
+```typescript
+import { User } from 'shared';
+import { NAME } from 'shared/resolver/examples';
+import { DeviceType } from 'shared/utils/getDeviceType';
+```
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/users` | Get all users |
-| `GET` | `/users/:id` | Get user by ID |
-| `POST` | `/users` | Create user `{ name, email }` |
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start all dev servers concurrently |
-| `npm run build` | Build all packages |
-| `npm run build:client` | Build client only |
-| `npm run build:server` | Build server only |
-| `npm start` | Run production server |
-| `npm run clear` | Remove all `node_modules` and `dist` |
-
-## Debugging
-
-### Client
-
-- Webpack dev server runs on port 3000 with HMR and source maps
-- Open browser DevTools → Sources to debug TypeScript directly
-- Check console for `CLIENT=true` flag verification
-
-### Server
-
-```bash
-# Run with debugger
-node --inspect dist/index.js
-
-# Or use ts-node-dev with inspect
-npx ts-node-dev --inspect --respawn --transpile-only src/index.ts
-```
-
-Attach via Chrome DevTools (`chrome://inspect`) or your IDE.
-
-### Shared Package
-
-```bash
-# Rebuild shared only
-npm run build --workspace=shared
-
-# Watch mode for live changes
-npm run dev --workspace=shared
-```
-
-Verify platform outputs:
-```bash
-cat shared/dist/client/constants/index.js    # ESM (client)
-cat shared/dist/server/constants/index.cjs   # CJS (server)
-```
-
-## Adding Shared Code
-
-| File naming | Goes to | Description |
-|-------------|---------|-------------|
-| `*.ts` | Both `client` + `server` | Shared code |
-| `*.client.ts` | `dist/client/` only | Browser-only code |
-| `*.server.ts` | `dist/server/` only | Node.js-only code |
-
-After creating files, rebuild shared:
-```bash
-npm run build --workspace=shared
-```
-
-Then import in client or server:
-```typescript
-import { User, formatUser } from 'shared/constants';
-import { resolverExample } from 'shared/resolver';
-```
+| `GET` | `/health` | Health check + device info |
+| `GET` | `/device` | Detailed device detection |
+| `GET` | `/users` | List all users |
+| `POST` | `/auth/register` | Register new user |
+| `GET` | `/api-docs` | Swagger documentation |
 
 ## Full Documentation
 
-See [DOCUMENTATION.md](./DOCUMENTATION.md) for detailed architecture, build system, widget system, resolver system, and development workflow.
+See [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture details, build system, widget system, resolver system, linting setup, and development workflow.
