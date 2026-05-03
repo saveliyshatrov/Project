@@ -6,4 +6,4 @@ type ResolveUsersParams = {
     offset?: number;
 };
 
-export declare const resolveUsers: (params: ResolveUsersParams) => Promise<Collections<User>>;
+export declare const resolveUsers: (params: ResolveUsersParams) => Promise<Collections<User, 'users'>>;

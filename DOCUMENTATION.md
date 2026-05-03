@@ -137,13 +137,17 @@ Project/
             │   ├── createResolver.client.ts # Client: fetch proxy stub
             │   ├── createResolver.server.ts # Server: registry + execution
             │   ├── createResolver.d.ts      # TypeScript types only
-            │   ├── example.ts        # Example resolver
-            │   ├── normalize.ts      # Data normalization utility
             │   ├── examples.client.ts # Client-only export
             │   ├── examples.server.ts # Server-only export
-            │   ├── resolveUsers.client.ts # Client stub (no data)
-            │   ├── resolveUsers.server.ts # Server implementation (real data)
-            │   └── resolveUsers.d.ts  # TypeScript types
+            │   ├── normalize.ts      # Data normalization utility
+            │   ├── resolveUser/      # Resolve single user
+            │   │   ├── index.client.ts # Client stub
+            │   │   ├── index.server.ts # Server implementation
+            │   │   └── index.d.ts      # TypeScript types
+            │   └── resolveUsers/     # Resolve users list
+            │       ├── index.client.ts # Client stub
+            │       ├── index.server.ts # Server implementation
+            │       └── index.d.ts      # TypeScript types
             └── utils/
                 ├── index.ts          # Utils re-exports
                 └── getDeviceType.ts  # DeviceType enum
@@ -692,7 +696,7 @@ export const ViewExample = createWidget({
     view: ({ name, example }) => <div>name:{name} | example:{example}</div>,
     controller: async ({ example }) => {
         const name = await new Promise(res => setTimeout(() => res('Test name'), 5000));
-        const userCollection = await resolverExample({ collectionName: 'users' });
+        const userCollection = await resolveUsers({ limit: 10 });
         return {
             data: { example, name },
             collections: { userCollection, someCollection: { name: 'NAME', age: 999 } },
@@ -797,84 +801,115 @@ type Collections<Collection> = Record<string, CollectionState<Collection>>;
 
 ### resolveUsers
 
-A complete resolver example with strict client/server isolation.
+A complete resolver example with strict client/server isolation using the folder-based pattern.
 
-**Client** (`resolveUsers.client.ts`):
-```typescript
-import { Collections } from './normalize.js';
-import { createResolver } from './createResolver';
-
-type ResolveUsersParams = { limit?: number; offset?: number; };
-
-export const resolveUsers = createResolver<ResolveUsersParams, Collections<unknown>>(
-    () => ({}),
-    { name: 'resolveUsers' }
-);
+**Structure:**
+```
+shared/src/resolver/resolveUsers/
+├── index.client.ts     # Client stub (fetches from /resolver)
+├── index.server.ts     # Server implementation (real logic)
+└── index.d.ts          # TypeScript types
 ```
 
-**Server** (`resolveUsers.server.ts`):
+**Client** (`resolveUsers/index.client.ts`):
 ```typescript
-import { Collections, normalize } from './normalize.js';
-import { createResolver, resolverRegistry } from './createResolver';
+import { Collections } from '../normalize.js';
+import { createResolver } from '../createResolver';
 
 type ResolveUsersParams = { limit?: number; offset?: number; };
 
-export const resolveUsers = createResolver<ResolveUsersParams, Collections<User>>(
+export const resolveUsers = createResolver<ResolveUsersParams, Collections<User>>(() => ({}), {
+    name: 'resolveUsers',
+});
+```
+
+**Server** (`resolveUsers/index.server.ts`):
+```typescript
+import { Collections, normalize } from '../normalize.js';
+import { createResolver } from '../createResolver';
+
+type ResolveUsersParams = { limit?: number; offset?: number; };
+
+export const resolveUsers = createResolver<ResolveUsersParams, User>(
     async (ctx, params) => {
-        const users: User[] = [/* data */];
-        const filtered = users.slice(params.offset || 0, (params.offset || 0) + (params.limit || 10));
-        return normalize((user) => user.id)(filtered, 'users');
+        const users = await fetch('http://localhost:3001/users').then((r) => r.json());
+        const sliced = users.slice(params.offset ?? 0, (params.offset ?? 0) + (params.limit ?? users.length));
+        return normalize((user) => user.id)(sliced, 'users');
     },
     { name: 'resolveUsers' }
 );
-
-resolverRegistry.set('resolveUsers', resolveUsers);
 ```
 
-**Types** (`resolveUsers.d.ts`):
+**Types** (`resolveUsers/index.d.ts`):
 ```typescript
-import { Collections } from './normalize.js';
+import { Collections } from '../normalize.js';
+import { User } from '../../constants';
+
 type ResolveUsersParams = { limit?: number; offset?: number; };
-export declare const resolveUsers: (params: ResolveUsersParams) => Promise<Collections<{ id: string; name: string; email: string }>>;
+export declare const resolveUsers: (params: ResolveUsersParams) => Promise<Collections<User>>;
 ```
 
-### Example Resolver
+### resolveUser
 
-`shared/src/resolver/example.ts`
+Similar pattern for resolving a single user by ID.
 
+**Structure:**
+```
+shared/src/resolver/resolveUser/
+├── index.client.ts
+├── index.server.ts
+└── index.d.ts
+```
+
+**Client** (`resolveUser/index.client.ts`):
 ```typescript
-export const resolverExample = createResolver(
-    async (ctx, params: ExampleParams) => {
-        const users = await fetch('http://localhost:3001/users', { method: 'GET' })
-            .then(response => response.json()) as User[];
+import { Collections } from '../normalize.js';
+import { createResolver } from '../createResolver';
 
-        return normalize<User>((user) => user.id)(users, params.collectionName);
+export type ResolveUserParams = { id: string };
+
+export const resolveUser = createResolver<ResolveUserParams, Collections<unknown>>(() => ({}), {
+    name: 'resolveUser',
+});
+```
+
+**Server** (`resolveUser/index.server.ts`):
+```typescript
+import { User } from '../../constants';
+import { createResolver } from '../createResolver';
+import { normalize } from '../normalize';
+
+export type ResolveUserParams = { id: string };
+
+export const resolveUser = createResolver<ResolveUserParams, User>(
+    async (ctx, params) => {
+        const { user } = await fetch(`http://localhost:3001/users/${params.id}`).then((r) => r.json());
+        return normalize((u) => u.id)([user], 'users');
     },
-    { name: 'resolverExample' }
+    { name: 'resolveUser' }
 );
 ```
 
 ### Adding a New Resolver
 
-To add a new resolver, create three files:
+To add a new resolver, create a folder `shared/src/resolver/myResolver/` with three files:
 
-1. **`myResolver.client.ts`** — Client stub:
+1. **`index.client.ts`** — Client stub:
    ```typescript
-   import { Collections } from './normalize.js';
-   import { createResolver } from './createResolver';
+   import { Collections } from '../normalize.js';
+   import { createResolver } from '../createResolver';
 
    type MyParams = { filter?: string };
 
-   export const myResolver = createResolver<MyParams, Collections<unknown>>(
-       () => ({}),
-       { name: 'myResolver' }
-   );
+   export const myResolver = createResolver<MyParams, Collections<unknown>>(() => ({}), {
+       name: 'myResolver',
+   });
    ```
 
-2. **`myResolver.server.ts`** — Server implementation:
+2. **`index.server.ts`** — Server implementation:
    ```typescript
-   import { Collections, normalize } from './normalize.js';
-   import { createResolver, resolverRegistry } from './createResolver';
+   import { Collections, normalize } from '../normalize.js';
+   import { createResolver } from '../createResolver';
 
    type MyParams = { filter?: string };
 
@@ -885,19 +920,19 @@ To add a new resolver, create three files:
        },
        { name: 'myResolver' }
    );
-
-   resolverRegistry.set('myResolver', myResolver);
    ```
 
-3. **`myResolver.d.ts`** — Type declaration:
+3. **`index.d.ts`** — Type declaration:
    ```typescript
-   import { Collections } from './normalize.js';
+   import { Collections } from '../normalize.js';
    type MyParams = { filter?: string };
    export declare const myResolver: (params: MyParams) => Promise<Collections<{ id: string }>>;
    ```
 
 4. Re-export from `shared/src/resolver/index.ts`:
    ```typescript
+   export * from './myResolver';
+   ```
    export { myResolver } from './myResolver';
    ```
 
@@ -1105,16 +1140,22 @@ Client App (port 3000)
     ├── imports shared/utils      ──► dist/client/utils/index.js (ESM)
     ├── imports shared/auth       ──► dist/client/auth/index.js (ESM)
     │
-    └── resolveUsers() ──fetch──► GET /resolver?resolver=resolveUsers
+    ├── resolveUsers() ──fetch──► GET /resolver?resolver=resolveUsers
+    │                                 │
+    │                                 ▼
+    │                             Server API (port 3001)
+    │                                 │
+    │                                 ├── imports shared           ──► dist/server/index.cjs (CJS)
+    │                                 ├── imports shared/auth      ──► dist/server/auth/index.cjs (CJS)
+    │                                 ├── imports shared/resolver  ──► dist/server/resolver/*.cjs
+    │                                 ├── resolverRegistry         ──► resolveUsers, resolveUser
+    │                                 └── normalize data, return JSON
+    │
+    └── resolveUser() ──fetch───► GET /resolver?resolver=resolveUser&params={"id":"1"}
                                       │
                                       ▼
                                   Server API (port 3001)
-                                      │
-                                      ├── imports shared           ──► dist/server/index.cjs (CJS)
-                                      ├── imports shared/auth      ──► dist/server/auth/index.cjs (CJS)
-                                      ├── imports shared/resolver  ──► dist/server/resolver/*.cjs
-                                      ├── resolverRegistry         ──► resolveUsers, example, etc.
-                                      └── normalize data, return JSON
+                                      └── fetch /users/1, normalize, return JSON
 ```
 
 ## Development Workflow
@@ -1128,7 +1169,10 @@ Client App (port 3000)
 
 2. If it's a new top-level directory, create `shared/src/myModule/index.ts` with exports
 
-3. If the module is a resolver with platform-split logic, also create a `.d.ts` type declaration
+3. For resolvers, create a folder `shared/src/resolver/myResolver/` with three files:
+   - `index.client.ts` → client stub
+   - `index.server.ts` → server implementation
+   - `index.d.ts` → TypeScript types
 
 4. Rebuild shared: `pnpm --filter shared run build`
 
@@ -1136,6 +1180,7 @@ Client App (port 3000)
    ```typescript
    import { something } from 'shared';
    import { myModule } from 'shared/myModule';
+   import { myResolver } from 'shared/resolver/myResolver';
    ```
 
 ### Adding a New Server Endpoint

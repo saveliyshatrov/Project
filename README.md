@@ -60,11 +60,17 @@ shared/          # Shared code (client + server)
       createResolver.client.ts  # Client stub (fetches from /resolver endpoint)
       createResolver.server.ts  # Server registry + execution engine
       createResolver.d.ts       # TypeScript types only
-      resolveUsers.client.ts    # Client stub for resolveUsers
-      resolveUsers.server.ts    # Server implementation of resolveUsers
-      resolveUsers.d.ts         # TypeScript types for resolveUsers
-      example.ts        # Example resolver (shared)
+      examples.client.ts        # Client-only export
+      examples.server.ts        # Server-only export
       normalize.ts      # Data normalization utility
+      resolveUsers/     # Resolvers are folders with index files
+        index.client.ts     # Client stub (fetches from /resolver)
+        index.server.ts     # Server implementation (real logic)
+        index.d.ts          # TypeScript types
+      resolveUser/
+        index.client.ts     # Client stub
+        index.server.ts     # Server implementation
+        index.d.ts          # TypeScript types
     utils/             # Utilities (DeviceType, etc.)
     auth/              # Auth interfaces
 ```
@@ -84,8 +90,8 @@ App.desktop.tsx   → used only in desktop build
 ```
 createResolver.client.ts  → dist/client/resolver/createResolver.js (fetch proxy, no server logic)
 createResolver.server.ts  → dist/server/resolver/createResolver.cjs (registry + execution)
-resolveUsers.client.ts    → dist/client/resolver/resolveUsers.js (stub only, ~130 bytes)
-resolveUsers.server.ts    → dist/server/resolver/resolveUsers.cjs (real data + logic)
+resolveUsers/index.client.ts  → dist/client/resolver/resolveUsers/index.js (stub only)
+resolveUsers/index.server.ts  → dist/server/resolver/resolveUsers/index.cjs (real data + logic)
 ```
 
 The webpack extension resolution ensures `.client.ts` files compile only to the client bundle and `.server.ts` files only to the server bundle. Server-side data **never** leaks into client bundles.
@@ -94,15 +100,16 @@ The webpack extension resolution ensures `.client.ts` files compile only to the 
 
 1. Create file in `shared/src/` (or a new subdirectory with `index.ts`)
 2. Use platform suffixes when code differs: `.client.ts` for browser-only, `.server.ts` for Node-only
-3. Add `.d.ts` type declaration if the resolver is platform-split
+3. For resolvers, use a folder with `index.client.ts` / `index.server.ts` / `index.d.ts`
 4. Rebuild: `pnpm --filter shared run build`
 5. Import anywhere:
 
 ```typescript
 import { User } from 'shared';
-import { NAME } from 'shared/resolver/example';
+import { NAME } from 'shared/resolver/examples';
 import { DeviceType } from 'shared/utils/getDeviceType';
 import { resolveUsers } from 'shared/resolver/resolveUsers';
+import { resolveUser } from 'shared/resolver/resolveUser';
 ```
 
 ## Resolver System
@@ -119,48 +126,49 @@ const result = await resolveUsers({ limit: 10 });
 
 **Adding a new resolver:**
 
-1. Create `shared/src/resolver/myResolver.client.ts` — client stub:
+1. Create folder `shared/src/resolver/myResolver/` with three files:
+
+   **`index.client.ts`** — client stub:
    ```typescript
-   import { Collections } from './normalize.js';
-   import { createResolver } from './createResolver';
+   import { Collections } from '../normalize.js';
+   import { createResolver } from '../createResolver';
 
-   type MyResolverParams = { filter?: string };
+   type MyParams = { filter?: string };
 
-   export const myResolver = createResolver<MyResolverParams, Collections<unknown>>(
-       () => ({}),
-       { name: 'myResolver' }
-   );
+   export const myResolver = createResolver<MyParams, Collections<unknown>>(() => ({}), {
+       name: 'myResolver',
+   });
    ```
 
-2. Create `shared/src/resolver/myResolver.server.ts` — server implementation:
+   **`index.server.ts`** — server implementation:
    ```typescript
-   import { Collections, normalize } from './normalize.js';
-   import { createResolver, resolverRegistry } from './createResolver';
+   import { Collections, normalize } from '../normalize.js';
+   import { createResolver, resolverRegistry } from '../createResolver';
 
-   type MyResolverParams = { filter?: string };
+   type MyParams = { filter?: string };
 
-   export const myResolver = createResolver<MyResolverParams, Collections<{ id: string }>>(
+   export const myResolver = createResolver<MyParams, Collections<{ id: string }>>(
        async (ctx, params) => {
            const data = /* fetch from DB or API */;
            return normalize((item) => item.id)(data, 'myCollection');
        },
        { name: 'myResolver' }
    );
-
-   resolverRegistry.set('myResolver', myResolver);
    ```
 
-3. Create `shared/src/resolver/myResolver.d.ts` — type declaration:
+   **`index.d.ts`** — type declaration:
    ```typescript
-   import { Collections } from './normalize.js';
-   type MyResolverParams = { filter?: string };
-   export declare const myResolver: (params: MyResolverParams) => Promise<Collections<{ id: string }>>;
+   import { Collections } from '../normalize.js';
+   type MyParams = { filter?: string };
+   export declare const myResolver: (params: MyParams) => Promise<Collections<{ id: string }>>;
    ```
 
-4. Re-export from `shared/src/resolver/index.ts`:
+2. Re-export from `shared/src/resolver/index.ts`:
    ```typescript
-   export { myResolver } from './myResolver';
+   export * from './myResolver';
    ```
+
+3. Rebuild: `pnpm --filter shared run build`
 
 ## API Endpoints
 

@@ -5,4 +5,4 @@ export type ResolveUserParams = {
     id: string;
 };
 
-export declare const resolveUser: (params: ResolveUserParams) => Promise<Collections<User>>;
+export declare const resolveUser: (params: ResolveUserParams) => Promise<Collections<User, 'users'>>;
