@@ -77,7 +77,7 @@
         "gen:exports": "node scripts/generate-exports.mjs",
         "build:types": "node scripts/distribute-types.mjs",
         "watch:types": "tsc --project tsconfig.types.json --watch",
-        "dev": "pnpm gen:exports && pnpm build:types && (tsc --project tsconfig.types.json --watch & node scripts/watch-types.mjs & webpack --watch)",
+        "dev": "pnpm gen:exports && pnpm build:types && (tsc --project tsconfig.types.json --watch --preserveWatchOutput & node scripts/watch-types.mjs & webpack --watch)",
         "clean": "rimraf dist"
     },
     "devDependencies": {

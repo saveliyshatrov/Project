@@ -70,6 +70,10 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
 
         devtool: false,
 
+        watchOptions: {
+            ignored: /node_modules/,
+        },
+
         resolve: {
             extensions: isClient
                 ? ['.client.ts', '.client.tsx', '.ts', '.tsx', '.js']

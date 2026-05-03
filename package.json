@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "prepare-dev": "pnpm install && pnpm --filter shared run build",
-        "dev": "concurrently \"pnpm --filter client run dev\" \"pnpm --filter server run dev\" \"pnpm --filter shared run dev\"",
+        "dev": "concurrently --prefix \"[{name}]\" --prefix-colors \"cyan.bold,yellow.bold,magenta.bold\" --names \"CLIENT,SERVER,SHARED\" \"pnpm --filter client run dev\" \"pnpm --filter server run dev\" \"pnpm --filter shared run dev\"",
         "dev:client": "pnpm --filter client run dev",
         "dev:server": "pnpm --filter server run dev",
         "dev:shared": "pnpm --filter shared run dev",
