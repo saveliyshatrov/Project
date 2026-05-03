@@ -13,11 +13,11 @@ type Ctx = {
 type Func<Params, CollectionType> = (
     ctx: Ctx,
     params: Params
-) => Collections<CollectionType> | Promise<Collections<CollectionType>>;
+) => Collections<CollectionType, string> | Promise<Collections<CollectionType, string>>;
 
 type Promisable<T> = T | Promise<T>;
 
-type Runner<Params, CollectionType> = (params: Params) => Promisable<Collections<CollectionType>>;
+type Runner<Params, CollectionType> = (params: Params) => Promisable<Collections<CollectionType, string>>;
 
 export const resolverRegistry = new Map<
     string,

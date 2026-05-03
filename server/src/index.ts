@@ -211,8 +211,7 @@ app.get('/users/:id', (req: Request, res: Response) => {
 
     if (user) {
         res.json({
-            success: true,
-            data: formatUser(user),
+            user,
         });
     } else {
         res.status(404).json({

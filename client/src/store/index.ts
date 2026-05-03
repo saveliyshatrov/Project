@@ -1,8 +1,13 @@
+import type { EnhancedStore } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
 
 import { reducer as CollectionsReducer } from './collectionsSlice';
 
-export const store = configureStore({
+type Store = EnhancedStore<{
+    collections: ReturnType<typeof CollectionsReducer>;
+}>;
+
+export const store: Store = configureStore({
     reducer: {
         collections: CollectionsReducer,
     },

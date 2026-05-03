@@ -2,7 +2,10 @@ type FuncNormalize<ArgumentType> = (arg: ArgumentType) => string;
 
 export type CollectionState<ElementType> = Record<string, ElementType>;
 
-export type Collections<Collection> = Record<string, CollectionState<Collection>>;
+export type Collections<Collection, CollectionName extends string> = Record<
+    CollectionName,
+    CollectionState<Collection>
+>;
 
 export const normalize = <ArgumentType>(func: FuncNormalize<ArgumentType>) => {
     return (list: Array<ArgumentType>, collectionName: string) => {

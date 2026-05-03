@@ -1,3 +1,3 @@
-import { createConfig } from './webpack.base.config.ts';
+import { createConfig } from './webpack.base.config';
 
 export default createConfig('mobile', 'development');

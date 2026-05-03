@@ -13,9 +13,9 @@ type Ctx = {
 type Func<Params, CollectionType> = (
     ctx: Ctx,
     params: Params
-) => Collections<CollectionType> | Promise<Collections<CollectionType>>;
+) => Collections<CollectionType, string> | Promise<Collections<CollectionType, string>>;
 
-type Runner<Params, CollectionType> = (params: Params) => Promise<Collections<CollectionType>>;
+type Runner<Params, CollectionType> = (params: Params) => Promise<Collections<CollectionType, string>>;
 
 export function createResolver<Params, CollectionType>(
     _func: Func<Params, CollectionType>,
@@ -33,6 +33,6 @@ export function createResolver<Params, CollectionType>(
             throw new Error(`Resolver "${options.name}" failed: ${response.statusText}`);
         }
 
-        return (await response.json()) as Collections<CollectionType>;
+        return (await response.json()) as Collections<CollectionType, string>;
     };
 }
