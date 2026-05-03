@@ -373,7 +373,7 @@ app.use('/dist/mobile', express.static(path.join(__dirname, '../../client/dist/m
 app.use('/dist/desktop', express.static(path.join(__dirname, '../../client/dist/desktop')));
 
 // Fallback to correct index.html based on device type
-app.get('*', (req: Request, res: Response) => {
+app.get('{*splat}', (req: Request, res: Response) => {
     const device = getDeviceType(req);
     const indexPath = path.join(__dirname, `../../client/dist/${device}/index.html`);
     res.sendFile(indexPath);

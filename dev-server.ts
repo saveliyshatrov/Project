@@ -49,7 +49,7 @@ app.use('/resolver', async (req, res) => {
 app.use('/dist/mobile', express.static(path.join(__dirname, 'client/dist/mobile')));
 app.use('/dist/desktop', express.static(path.join(__dirname, 'client/dist/desktop')));
 
-app.get('*', (req, res) => {
+app.get('{*splat}', (req, res) => {
     const device = getDeviceType(req);
     res.sendFile(path.join(__dirname, `client/dist/${device}/index.html`));
 });
