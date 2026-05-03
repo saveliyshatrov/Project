@@ -28,6 +28,7 @@ type WidgetParams<ComponentProps, DataProps, collectionsProps = CollectionState>
         collections?: collectionsProps;
     } | null>;
     skeleton?: React.ComponentType<unknown>;
+    // @experimental - don't use if you don't know specific
     name?: string;
 };
 
