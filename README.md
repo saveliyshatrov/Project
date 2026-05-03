@@ -21,7 +21,7 @@ pnpm run dev
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| Frontend | http://localhost:3000 | Auto-serves mobile or desktop bundle |
+| Frontend | http://localhost:3000 | Auto-serves mobile or desktop bundle by User-Agent |
 | Backend API | http://localhost:3001 | Includes Swagger at `/api-docs` |
 | Device Info | http://localhost:3001/device | Returns detected device type |
 
@@ -29,7 +29,7 @@ pnpm run dev
 
 | Command | Description |
 |---------|-------------|
-| `pnpm run dev` | Start all dev servers (client, server, shared watch) |
+| `pnpm run dev` | Start all dev servers (client, server, shared watch) with prefixed logging |
 | `pnpm run build` | Build everything (shared → client → server) |
 | `pnpm start` | Run production server (port 3001, serves both platforms) |
 | `pnpm run lint` | Check code with ESLint |
@@ -42,10 +42,15 @@ pnpm run dev
 ```
 client/          # React frontend
   src/
-    App.mobile.tsx     # Mobile-specific component
-    App.desktop.tsx    # Desktop-specific component
+    App.mobile.tsx     # Mobile-specific component (uses Slot)
+    App.desktop.tsx    # Desktop-specific component (uses Slot)
     App.tsx            # Fallback (used if no platform-specific file)
-    widget/            # Reusable widget components
+    widget/            # Widget system
+      index.tsx            # createWidget factory with WidgetCtx
+      registry.ts          # Widget registry (registerWidget, getWidget, hasWidget)
+      Slot.tsx             # Renders widget by name
+      UserList.tsx         # User list widget
+      UserDetail.tsx       # User detail widget
     store/             # Redux state management
 
 server/          # Express backend
@@ -112,6 +117,67 @@ import { resolveUsers } from 'shared/resolver/resolveUsers';
 import { resolveUser } from 'shared/resolver/resolveUser';
 ```
 
+## Widget System
+
+Widgets are data-driven components built with the `createWidget` factory. Each widget has a `view` (React component), a `controller` (async data fetcher), and an optional `skeleton` (loading placeholder).
+
+```typescript
+// client/src/widget/UserList.tsx
+export const UserListWidget = createWidget<Props, object>({
+    view: UserList,
+    name: 'UserList',
+    controller: async () => {
+        const users = await resolveUsers({ limit: 10 });
+        return { data: { users: Object.values(users.users) } };
+    },
+    skeleton: () => <div>Loading...</div>,
+});
+```
+
+### WidgetCtx
+
+Controllers receive a `ctx` object with full page context:
+
+```typescript
+type WidgetCtx = {
+    page: {
+        pathname: string;
+        search: string;
+        searchParams: URLSearchParams;
+        params: Record<string, string | undefined>;
+    };
+};
+
+// Usage in controller:
+controller: async ({ ctx }) => {
+    const userId = ctx.page.params.userId;
+    const query = ctx.page.searchParams.get('q');
+    // ...
+}
+```
+
+### Slot Component
+
+Render widgets by name anywhere in the app:
+
+```tsx
+import { Slot } from '@widget/Slot';
+
+// In routes:
+<Route path="/users/:userId" element={<Slot name="UserDetail" />} />
+
+// With fallback:
+<Slot name="MyWidget" fallback={<div>Not found</div>} />
+```
+
+### Widget Lifecycle
+
+1. Mount → show skeleton
+2. `controller(props)` called with `ctx` (page info included)
+3. Success → render view with fetched data, dispatch collections to Redux
+4. Error → render null
+5. Re-fetches on route change (`location.pathname`)
+
 ## Resolver System
 
 Resolvers execute **only on the server**. The client receives a stub that makes a fetch to `/resolver`.
@@ -143,7 +209,7 @@ const result = await resolveUsers({ limit: 10 });
    **`index.server.ts`** — server implementation:
    ```typescript
    import { Collections, normalize } from '../normalize.js';
-   import { createResolver, resolverRegistry } from '../createResolver';
+   import { createResolver } from '../createResolver';
 
    type MyParams = { filter?: string };
 
