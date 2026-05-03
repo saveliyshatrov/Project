@@ -380,9 +380,10 @@ app.get('{*splat}', (req: Request, res: Response) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📦 Version: ${VERSION}`);
 });
 
+export { server };
 export default app;

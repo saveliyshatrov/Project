@@ -7,7 +7,8 @@
         "dev": "cd .. && pnpm exec tsx dev-server.ts",
         "build": "webpack --mode production --config ../webpack.client.prod.config.ts",
         "build:mobile": "webpack --mode production --config ../webpack.client.prod.config.ts --config-name mobile",
-        "build:desktop": "webpack --mode production --config ../webpack.client.prod.config.ts --config-name desktop"
+        "build:desktop": "webpack --mode production --config ../webpack.client.prod.config.ts --config-name desktop",
+        "test": "jest --config jest.config.ts"
     },
     "dependencies": {
         "@reduxjs/toolkit": "2.11.2",
