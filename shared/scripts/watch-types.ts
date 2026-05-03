@@ -52,8 +52,8 @@ function distributeFiles() {
     }
 }
 
-function getAllFiles(dir) {
-    const result = [];
+function getAllFiles(dir: string): string[] {
+    const result: string[] = [];
     if (!fs.existsSync(dir)) return result;
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -68,7 +68,7 @@ function getAllFiles(dir) {
     return result;
 }
 
-function copyTo(targetPath, sourcePath) {
+function copyTo(targetPath: string, sourcePath: string) {
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     fs.copyFileSync(sourcePath, targetPath);
 }
@@ -78,7 +78,7 @@ distributeFiles();
 console.log('Types distributed (initial)');
 
 // Watch for changes
-let timeout = null;
+let timeout: NodeJS.Timeout | null = null;
 
 fs.watch(typesDir, { recursive: true }, (event, filename) => {
     if (timeout) clearTimeout(timeout);

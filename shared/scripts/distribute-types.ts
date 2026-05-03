@@ -21,7 +21,7 @@ console.log('Distributing type declarations...');
 const distClient = path.resolve(rootDir, 'dist/client');
 const distServer = path.resolve(rootDir, 'dist/server');
 
-function distributeFiles(dir) {
+function distributeFiles(dir: string) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -60,7 +60,7 @@ function distributeFiles(dir) {
     }
 }
 
-function copyTo(targetPath, sourcePath) {
+function copyTo(targetPath: string, sourcePath: string) {
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     fs.copyFileSync(sourcePath, targetPath);
 }

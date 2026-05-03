@@ -74,10 +74,10 @@
     },
     "scripts": {
         "build": "pnpm clean && pnpm gen:exports && (cd .. && webpack --config webpack.shared.config.ts) && pnpm build:types",
-        "gen:exports": "node scripts/generate-exports.mjs",
-        "build:types": "node scripts/distribute-types.mjs",
+        "gen:exports": "pnpm exec tsx scripts/generate-exports.ts",
+        "build:types": "pnpm exec tsx scripts/distribute-types.ts",
         "watch:types": "tsc --project tsconfig.types.json --watch",
-        "dev": "pnpm gen:exports && pnpm build:types && (tsc --project tsconfig.types.json --watch --preserveWatchOutput & node scripts/watch-types.mjs & (cd .. && webpack --watch --config webpack.shared.config.ts))",
+        "dev": "pnpm gen:exports && pnpm build:types && (tsc --project tsconfig.types.json --watch --preserveWatchOutput & pnpm exec tsx scripts/watch-types.ts & (cd .. && webpack --watch --config webpack.shared.config.ts))",
         "clean": "rimraf dist"
     },
     "devDependencies": {

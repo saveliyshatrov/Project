@@ -7,10 +7,10 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const pkgPath = path.resolve(rootDir, 'package.json');
 
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as Record<string, unknown>;
 const srcDir = path.resolve(rootDir, 'src');
 
-function makeExport(basePath, isWildcard = false) {
+function makeExport(basePath: string, isWildcard = false) {
     const ext = isWildcard ? '*' : 'index';
     const normalized = basePath ? `${basePath}/` : '';
     return {
@@ -24,7 +24,7 @@ function makeExport(basePath, isWildcard = false) {
     };
 }
 
-const exports = {
+const exports: Record<string, ReturnType<typeof makeExport>> = {
     '.': makeExport('', false),
 };
 

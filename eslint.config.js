@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import pluginJs from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
@@ -76,5 +77,15 @@ export default [
     },
     {
         ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', 'shared/scripts/**', '**/pnpm-lock.yaml'],
+    },
+    {
+        files: ['**/*.json'],
+        plugins: {
+            '@stylistic': stylistic,
+        },
+        rules: {
+            '@stylistic/indent': ['error', 4],
+            '@typescript-eslint/no-unused-expressions': 'off',
+        },
     },
 ];
