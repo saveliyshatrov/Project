@@ -9,24 +9,27 @@ import webpack from 'webpack';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-type Platform = 'mobile' | 'desktop';
+export type Platform = 'mobile' | 'desktop';
 
-export function createConfig(
+export type Mode = 'development' | 'production';
+
+export function createClientConfig(
     platform: Platform,
-    mode: 'development' | 'production',
+    mode: Mode,
     overrides: Partial<webpack.Configuration> = {}
 ): webpack.Configuration {
     const isProd = mode === 'production';
     const platformSuffix = `.${platform}`;
+    const clientRoot = path.resolve(__dirname, 'client');
 
     return {
-        context: __dirname,
+        context: clientRoot,
         mode,
         target: 'web',
         name: platform,
         entry: './src/index.tsx',
         output: {
-            path: path.resolve(__dirname, `dist/${platform}`),
+            path: path.resolve(clientRoot, `dist/${platform}`),
             filename: isProd ? '[name].[contenthash].js' : 'js/[name].js',
             clean: isProd,
             publicPath: `/dist/${platform}/`,
@@ -41,7 +44,7 @@ export function createConfig(
             : undefined,
         resolve: {
             extensions: [`${platformSuffix}.tsx`, `${platformSuffix}.ts`, '.tsx', '.ts', '.js', '.jsx', '.json'],
-            plugins: [new TsconfigPathsPlugin()],
+            plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(clientRoot, 'tsconfig.json') })],
             symlinks: false,
         },
         module: {

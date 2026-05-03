@@ -4,15 +4,17 @@ import path from 'path';
 import { glob } from 'glob';
 import type { Configuration } from 'webpack';
 
-interface Env {
-    target?: 'client' | 'server';
-}
+export type Target = 'client' | 'server';
+
+export type Env = {
+    target?: Target;
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function getEntries(target: 'client' | 'server'): Record<string, string> {
-    const srcDir = path.resolve(__dirname, 'src');
+const getEntries = (target: Target): Record<string, string> => {
+    const srcDir = path.resolve(__dirname, 'shared/src');
     const entries: Record<string, string> = {};
 
     const allFiles = glob.sync('**/*.{ts,tsx}', {
@@ -32,13 +34,13 @@ function getEntries(target: 'client' | 'server'): Record<string, string> {
             .replace(/\.server\.(ts|tsx)$/, '')
             .replace(/\.tsx?$/, '');
 
-        entries[name] = `./src/${file}`;
+        entries[name] = `./shared/src/${file}`;
     }
 
     return entries;
-}
+};
 
-const createConfig = (target: 'client' | 'server'): Configuration => {
+const createConfig = (target: Target): Configuration => {
     const entries = getEntries(target);
     const isClient = target === 'client';
 
@@ -52,7 +54,7 @@ const createConfig = (target: 'client' | 'server'): Configuration => {
         target: isClient ? 'web' : 'node',
 
         output: {
-            path: path.resolve(__dirname, `dist/${target}`),
+            path: path.resolve(__dirname, `shared/dist/${target}`),
             filename: isClient ? '[name].js' : '[name].cjs',
             library: {
                 type: isClient ? 'module' : 'commonjs2',

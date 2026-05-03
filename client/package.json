@@ -4,10 +4,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "node dev-server.mjs",
-        "build": "webpack --mode production --config webpack.prod.config.ts",
-        "build:mobile": "webpack --mode production --config webpack.prod.config.ts --config-name mobile",
-        "build:desktop": "webpack --mode production --config webpack.prod.config.ts --config-name desktop"
+        "dev": "cd .. && pnpm exec tsx dev-server.ts",
+        "build": "webpack --mode production --config ../webpack.client.prod.config.ts",
+        "build:mobile": "webpack --mode production --config ../webpack.client.prod.config.ts --config-name mobile",
+        "build:desktop": "webpack --mode production --config ../webpack.client.prod.config.ts --config-name desktop"
     },
     "dependencies": {
         "@reduxjs/toolkit": "2.11.2",
@@ -35,15 +35,11 @@
         "express": "4.19.2",
         "express-useragent": "2.1.0",
         "globals": "17.5.0",
-        "html-webpack-plugin": "5.6.0",
         "shared": "workspace:*",
         "style-loader": "3.3.4",
-        "ts-loader": "9.5.1",
-        "tsconfig-paths-webpack-plugin": "4.2.0",
         "typescript": "5.3.3",
         "typescript-eslint": "8.59.1",
-        "webpack": "5.90.3",
-        "webpack-cli": "5.1.4",
-        "webpack-dev-server": "5.0.4"
+        "webpack": "5.106.2",
+        "webpack-cli": "7.0.2"
     }
 }

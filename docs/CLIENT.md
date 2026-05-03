@@ -4,14 +4,14 @@ React frontend built with Webpack 5, Redux Toolkit, and react-router v7.
 
 ## Build Configuration
 
-Uses Webpack 5 with a config factory pattern:
+Uses Webpack 5 with config factory pattern at root level:
 
-| File | Purpose |
-|------|---------|
-| `webpack.base.config.ts` | Config factory: generates platform-specific configs with NormalModuleReplacementPlugin |
-| `webpack.dev.config.ts` | Dev: single config for mobile platform |
-| `webpack.prod.config.ts` | Production: array of configs for mobile + desktop |
-| `dev-server.mjs` | Custom Express dev server that watches and serves both platforms |
+| File                            | Purpose                                                                                |
+|---------------------------------|----------------------------------------------------------------------------------------|
+| `webpack.client.base.config.ts` | Config factory: generates platform-specific configs with NormalModuleReplacementPlugin |
+| `webpack.client.dev.config.ts`  | Dev: single config for mobile platform (used by dev-server.ts)                         |
+| `webpack.client.prod.config.ts` | Production: array of configs for mobile + desktop                                      |
+| `dev-server.ts`                 | Custom Express dev server that watches and serves both platforms                       |
 
 ### Key Features
 

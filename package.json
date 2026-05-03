@@ -4,11 +4,12 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "prepare-dev": "pnpm install && pnpm --filter shared run build",
+        "prepare-dev": "pnpm install && pnpm run build",
         "dev": "concurrently --prefix \"[{name}]\" --prefix-colors \"cyan.bold,yellow.bold,magenta.bold\" --names \"CLIENT,SERVER,SHARED\" \"pnpm --filter client run dev\" \"pnpm --filter server run dev\" \"pnpm --filter shared run dev\"",
         "dev:client": "pnpm --filter client run dev",
         "dev:server": "pnpm --filter server run dev",
         "dev:shared": "pnpm --filter shared run dev",
+        "shared:webpack": "webpack --config webpack.shared.config.ts",
         "build": "pnpm --filter shared run build && pnpm --filter client run build && pnpm --filter server run build",
         "build:client": "pnpm --filter client run build",
         "build:server": "pnpm --filter server run build",
@@ -32,21 +33,33 @@
     "devDependencies": {
         "@eslint/eslintrc": "3.3.5",
         "@eslint/js": "9.39.4",
+        "@types/express": "4.17.25",
         "concurrently": "8.2.2",
+        "css-loader": "6.11.0",
         "eslint": "9.39.4",
         "eslint-config-prettier": "10.1.8",
         "eslint-import-resolver-typescript": "4.4.4",
         "eslint-plugin-import": "2.32.0",
         "eslint-plugin-react": "7.37.5",
         "eslint-plugin-react-hooks": "7.1.1",
+        "express": "4.19.2",
+        "glob": "13.0.6",
         "globals": "17.5.0",
+        "html-webpack-plugin": "5.6.0",
         "husky": "9.1.7",
         "lint-staged": "16.4.0",
         "prettier": "3.5.3",
+        "style-loader": "3.3.4",
+        "ts-loader": "9.5.7",
+        "tsconfig-paths-webpack-plugin": "4.2.0",
+        "tsx": "^4.21.0",
         "typescript": "5.3.3",
-        "typescript-eslint": "8.59.1"
+        "typescript-eslint": "8.59.1",
+        "webpack": "5.106.2",
+        "webpack-cli": "7.0.2"
     },
     "dependencies": {
-        "express-useragent": "2.1.0"
+        "express-useragent": "2.1.0",
+        "shared": "workspace:*"
     }
 }
