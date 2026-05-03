@@ -4,9 +4,10 @@
 
 | File | Description |
 |------|-------------|
-| [CLIENT.md](./docs/CLIENT.md) | Client package: build system, platform-specific builds, dev server, widgets |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System architecture, data flow, request lifecycle, build pipeline |
+| [CLIENT.md](./docs/CLIENT.md) | Client package: build config, dev server, entry point, directory structure |
 | [SERVER.md](./docs/SERVER.md) | Server package: Express API, endpoints, device detection, CORS |
-| [SHARED.md](./docs/SHARED.md) | Shared package: dual-format builds, type distribution, module resolution |
+| [SHARED.md](./docs/SHARED.md) | Shared package: build commands, module exports, adding shared code |
 | [WIDGETS.md](./docs/WIDGETS.md) | Widget system: createWidget, WidgetCtx, Slot component, registry |
 | [RESOLVERS.md](./docs/RESOLVERS.md) | Resolver system: createResolver, normalize, adding new resolvers |
 | [COLLECTIONS.md](./docs/COLLECTIONS.md) | State management: Redux store, collections slice |
@@ -21,38 +22,6 @@
 - [Adding a New Resolver](./docs/RESOLVERS.md#adding-a-new-resolver)
 - [Adding a Server Endpoint](./docs/SERVER.md#adding-a-new-server-endpoint)
 - [Linting and Formatting](#linting-and-formatting)
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                        Monorepo Root                         │
-│  (pnpm workspaces, ESLint flat config, Prettier, Husky)      │
-├──────────────────┬──────────────────┬────────────────────────┤
-│     Client       │      Shared      │       Server           │
-│   (React 18)     │   (Webpack +     │     (Express)          │
-│   Webpack 5      │    TypeScript)   │     ts-node-dev        │
-│   Redux TK       │                  │     tsc                │
-└────────┬─────────┴────────┬─────────┴───────────┬────────────┘
-         │                  │                     │
-    ┌────┴────┐             │                     │
-    │         │             │                     │
-  mobile   desktop          │                     │
-  dist/    dist/            │                     │
-    │         │             │                     │
-    ▼         ▼             ▼                     ▼
-  ESM ◄── dist/client/*.js  dist/server/*.cjs ─► CJS
-```
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, TypeScript, Webpack 5, Redux Toolkit, react-router v7 |
-| **Backend** | Express, TypeScript, ts-node-dev, CORS, Swagger, express-useragent |
-| **Shared** | Webpack 5 (dual-target), TypeScript |
-| **Monorepo** | pnpm workspaces, concurrently |
-| **Tooling** | ESLint v9 (flat config), Prettier, Husky, lint-staged |
 
 ## Linting and Formatting
 
@@ -118,22 +87,6 @@ Husky + lint-staged runs on every commit:
 | `pnpm run prepare-dev` | Bootstrap from scratch |
 
 See individual package docs for package-specific scripts.
-
-## Dependency Graph
-
-```
-root (project)
-├── devDependencies: concurrently, typescript, eslint, prettier, husky, lint-staged
-│
-├── client (workspace)
-│   └── depends on → shared (workspace:*)
-│
-├── server (workspace)
-│   └── depends on → shared (workspace:*)
-│
-└── shared (workspace)
-    └── no internal workspace dependencies
-```
 
 ## Debugging
 

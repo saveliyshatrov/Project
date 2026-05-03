@@ -19,22 +19,7 @@ pnpm --filter server run build   # Compile with tsc
 pnpm --filter server run start   # Run production server (node dist/index.js)
 ```
 
-### Module Resolution
-
-`server/tsconfig.json` path aliases:
-
-```json
-{
-  "paths": {
-    "shared": ["../shared/dist/server/index.cjs"],
-    "shared/*": ["../shared/dist/server/*"],
-    "@*": ["src/*"]
-  }
-}
-```
-
-- `shared` → direct path to `dist/server/index.cjs` (CJS)
-- `shared/*` → `dist/server/*`
+See [ARCHITECTURE.md](./ARCHITECTURE.md#path-aliases) for server module resolution.
 
 ## API Endpoints
 

@@ -22,23 +22,6 @@ Uses Webpack 5 with a config factory pattern:
 - `process.env.CLIENT` and `process.env.PLATFORM` set via `DefinePlugin`
 - `NormalModuleReplacementPlugin` replaces `App.tsx` with platform-specific files
 
-### Module Resolution
-
-`client/tsconfig.json` path aliases:
-
-```json
-{
-  "paths": {
-    "@*": ["src/*"]
-  }
-}
-```
-
-- `@store/*` → `src/store/*`
-- `@widget/*` → `src/widget/*`
-- `@config` → `src/config.ts`
-- `shared/*` → resolves via package exports to `dist/client/*` (ESM)
-
 ### Commands
 
 ```bash
@@ -48,54 +31,7 @@ pnpm --filter client run build:mobile  # Mobile only
 pnpm --filter client run build:desktop # Desktop only
 ```
 
-## Platform-Specific Builds
-
-The client builds separate bundles for mobile and desktop platforms from the same source code.
-
-### File Naming Convention
-
-| File | Used in mobile build | Used in desktop build |
-|------|---------------------|----------------------|
-| `App.tsx` | Yes (fallback) | Yes (fallback) |
-| `App.mobile.tsx` | **Yes** (overrides App.tsx) | No |
-| `App.desktop.tsx` | No | **Yes** (overrides App.tsx) |
-
-### How It Works
-
-`webpack.base.config.ts` uses `webpack.NormalModuleReplacementPlugin` to intercept module resolution:
-
-```typescript
-new webpack.NormalModuleReplacementPlugin(
-    /^(.*\/)?([^/]+?)(\.tsx?|\.jsx?)$/,
-    (resource) => {
-        const platformFile = `${basename}.${platform}${ext}`;
-        if (fs.existsSync(platformFile)) {
-            resource.request = platformFile;
-        }
-    }
-)
-```
-
-The `resolve.extensions` array prioritizes platform-specific extensions:
-```typescript
-extensions: ['.mobile.tsx', '.mobile.ts', '.tsx', '.ts', '.js', '.jsx', '.json']
-```
-
-### Output Structure
-
-```
-client/dist/
-├── mobile/
-│   ├── index.html
-│   ├── runtime.[hash].js
-│   ├── [vendor].[hash].js
-│   └── main.[hash].js          # Built with App.mobile.tsx
-└── desktop/
-    ├── index.html
-    ├── runtime.[hash].js
-    ├── [vendor].[hash].js
-    └── main.[hash].js          # Built with App.desktop.tsx
-```
+See [ARCHITECTURE.md](./ARCHITECTURE.md#platform-specific-code-resolution-1) for platform-specific build details and [ARCHITECTURE.md](./ARCHITECTURE.md#path-aliases) for module resolution.
 
 ## Development Server
 

@@ -247,33 +247,4 @@ Create a folder `shared/src/resolver/myResolver/` with three files:
 }
 ```
 
-## Platform-Specific Resolution
 
-Files in `shared/src/` follow a naming convention that determines which platforms they compile to:
-
-| File Pattern | Compiled to | Description |
-|-------------|-------------|-------------|
-| `*.ts` | Both `dist/client/` and `dist/server/` | Shared code for all platforms |
-| `*.client.ts` | `dist/client/` only | Browser-specific code |
-| `*.server.ts` | `dist/server/` only | Node.js-specific code |
-
-**How it works** (`shared/webpack.config.ts`):
-
-```typescript
-function getEntries(target: 'client' | 'server') {
-    for (const file of allFiles) {
-        const isClientFile = /\.client\.(ts|tsx)$/.test(file);
-        const isServerFile = /\.server\.(ts|tsx)$/.test(file);
-
-        if (target === 'client' && isServerFile) continue;
-        if (target === 'server' && isClientFile) continue;
-
-        let name = file
-            .replace(/\.client\.(ts|tsx)$/, '')
-            .replace(/\.server\.(ts|tsx)$/, '')
-            .replace(/\.tsx?$/, '');
-
-        entries[name] = `./src/${file}`;
-    }
-}
-```
