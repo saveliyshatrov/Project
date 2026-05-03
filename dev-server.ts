@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,6 +11,24 @@ import { createClientConfig } from './webpack.client.base.config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const widgetsDir = path.join(__dirname, 'client/src/widget');
+
+function runWidgetGen() {
+    execSync('pnpm exec tsx client/scripts/generate-widget-entries.ts', { cwd: __dirname, stdio: 'inherit' });
+}
+
+runWidgetGen();
+
+fs.watch(widgetsDir, { recursive: true }, (eventType, filename) => {
+    if (
+        filename &&
+        (filename.endsWith('widget.tsx') || filename.endsWith('controller.ts') || filename.endsWith('skeleton.tsx'))
+    ) {
+        console.log('[widget-gen] Detected change, regenerating...');
+        runWidgetGen();
+    }
+});
 
 const app = express();
 

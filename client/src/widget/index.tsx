@@ -1,104 +1,21 @@
-import { CollectionState, updateCollection } from '@store/collectionsSlice';
-import React, { useEffect, useState } from 'react';
-import { JSX } from 'react/jsx-runtime';
-import { useDispatch } from 'react-redux';
-import { useLocation, useParams, useSearchParams } from 'react-router';
+import React from 'react';
 
-import { registerWidget } from './registry';
+import { registerWidgetLazy } from './registry';
 
-import IntrinsicAttributes = JSX.IntrinsicAttributes;
+export type { WidgetCtx } from './WidgetShell';
 
-export type WidgetCtx = {
-    page: {
-        pathname: string;
-        search: string;
-        searchParams: URLSearchParams;
-        params: Readonly<Partial<Record<string, string | undefined>>>;
-    };
+export { createWidgetShell } from './WidgetShell';
+
+type WidgetLoader = () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>;
+
+type WidgetParams = {
+    name: string;
+    loader: WidgetLoader;
 };
 
-type Ctx = {
-    ctx: WidgetCtx;
+export const createWidget = ({ name, loader }: WidgetParams) => {
+    registerWidgetLazy(name, loader);
+    return React.lazy(loader);
 };
 
-type WidgetParams<ComponentProps, DataProps, collectionsProps = CollectionState> = {
-    view: React.ComponentType<ComponentProps>;
-    controller: (componentProps: DataProps & Ctx) => Promise<{
-        data?: ComponentProps;
-        collections?: collectionsProps;
-    } | null>;
-    skeleton?: React.ComponentType<unknown>;
-    // @experimental - don't use if you don't know specific
-    name?: string;
-};
-
-export const createWidget = <ComponentProps, DataProps = Record<string, unknown>, collectionsProps = CollectionState>({
-    view: View,
-    skeleton: Skeleton,
-    controller,
-    name,
-}: WidgetParams<ComponentProps, DataProps, collectionsProps>) => {
-    const Component = (props: DataProps) => {
-        const [showSkeleton, setShowSkeleton] = useState(true);
-        const [showNothing, setShowNothing] = useState(false);
-        const dispatch = useDispatch();
-        const [componentControllerProps, setComponentControllerProps] = useState({});
-        const params = useParams();
-        const location = useLocation();
-        const [searchParams] = useSearchParams();
-
-        const ctx: WidgetCtx = {
-            page: {
-                pathname: location.pathname,
-                search: location.search,
-                searchParams,
-                params,
-            },
-        };
-
-        useEffect(() => {
-            controller({ ...props, ctx } as DataProps & Ctx)
-                .then((result) => {
-                    if (!result) {
-                        setShowNothing(true);
-                        return;
-                    }
-                    const { data, collections } = result;
-
-                    if (data) {
-                        setComponentControllerProps(data);
-                    }
-
-                    if (collections) {
-                        dispatch(updateCollection(collections));
-                    }
-                    setShowSkeleton(false);
-                })
-                .catch(() => {
-                    setShowSkeleton(false);
-                    setShowNothing(true);
-                });
-        }, [location.pathname]);
-
-        if (showNothing) {
-            return null;
-        }
-
-        if (Skeleton && showSkeleton) {
-            return <Skeleton />;
-        }
-
-        return <View {...(componentControllerProps as React.ComponentProps<typeof View> & IntrinsicAttributes)} />;
-    };
-
-    Component.displayName = `widget-${View.displayName}`;
-
-    if (name) {
-        registerWidget(name, {
-            component: Component as React.ComponentType<Record<string, unknown>>,
-            displayName: Component.displayName ?? name,
-        });
-    }
-
-    return Component;
-};
+export { registerWidgetLazy } from './registry';

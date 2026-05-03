@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 
-import { getWidget } from './registry';
+import { getWidget, hasWidget } from './registry';
 
 type SlotProps = {
     name: string;
@@ -8,7 +8,6 @@ type SlotProps = {
     fallback?: React.ReactNode;
 };
 
-// @experimental - future thing - use widgets directly
 export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
     const Widget = getWidget(name);
 
@@ -16,5 +15,13 @@ export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
         return <>{fallback}</>;
     }
 
-    return <Widget {...props} />;
+    return (
+        <Suspense fallback={fallback}>
+            <Widget {...props} />
+        </Suspense>
+    );
 };
+
+export function isWidgetRegistered(name: string): boolean {
+    return hasWidget(name);
+}
