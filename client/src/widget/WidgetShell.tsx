@@ -1,6 +1,6 @@
 import { CollectionState, updateCollection } from '@store/collectionsSlice';
 import React from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useParams, useSearchParams } from 'react-router';
 
 export type WidgetCtx = {
@@ -20,6 +20,7 @@ export type ControllerFunction<ControllerData, ViewProps, Collections> = (
 } | null>;
 
 type WidgetShellConfig<ViewProps, ControllerData, Collections extends CollectionState = CollectionState> = {
+    name: string;
     view: React.ComponentType<ViewProps>;
     controller: (ctx: { ctx: WidgetCtx } & ControllerData) => Promise<{
         data?: Partial<ViewProps>;
@@ -33,7 +34,7 @@ export function createWidgetShell<
     ControllerData = Record<string, unknown>,
     Collections extends CollectionState = CollectionState,
 >(config: WidgetShellConfig<ViewProps, ControllerData, Collections>): React.ComponentType<ControllerData> {
-    const { view: View, controller, skeleton: Skeleton } = config;
+    const { name, view: View, controller, skeleton: Skeleton } = config;
 
     const WidgetShell = (props: ControllerData) => {
         const [showSkeleton, setShowSkeleton] = React.useState(true);
@@ -43,6 +44,10 @@ export function createWidgetShell<
         const params = useParams();
         const location = useLocation();
         const [searchParams] = useSearchParams();
+        const rerenderVersion = useSelector(
+            (state: { collections: { widgets: { rerenderVersions: Record<string, number> } } }) =>
+                state.collections.widgets.rerenderVersions[name] ?? 0
+        );
 
         const ctx: WidgetCtx = {
             page: {
@@ -58,8 +63,15 @@ export function createWidgetShell<
             ctx,
         };
 
+        const controllerRef = React.useRef(controller);
+        controllerRef.current = controller;
+
+        /* eslint-disable react-hooks/exhaustive-deps */
         React.useEffect(() => {
-            controller(controllerDataInfo)
+            setShowSkeleton(true);
+            setShowNothing(false);
+            controllerRef
+                .current(controllerDataInfo)
                 .then((result) => {
                     if (!result) {
                         setShowNothing(true);
@@ -80,7 +92,8 @@ export function createWidgetShell<
                     setShowSkeleton(false);
                     setShowNothing(true);
                 });
-        }, [location.pathname]);
+        }, [location.pathname, rerenderVersion]);
+        /* eslint-enable react-hooks/exhaustive-deps */
 
         if (showNothing) {
             return null;

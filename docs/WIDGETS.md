@@ -49,6 +49,7 @@ Builds the widget React component with full lifecycle management (skeleton, data
 
 ```typescript
 export default createWidgetShell<ViewProps, ControllerData, CollectionData>({
+    name: 'MyWidget',   // required: widget name for registry + rerender
     view: MyView,       // React component to render
     controller,         // async fn that fetches data
     skeleton: Skeleton, // optional loading placeholder
@@ -126,6 +127,35 @@ export const controller: ControllerFunction<ControllerData, Props, CollectionSta
 4. **Empty result** → controller returns `null` → `showNothing = true` → renders `null`
 5. **Error** → `showSkeleton = false`, `showNothing = true` → renders `null`
 6. **Route change** → re-fetches when `location.pathname` changes
+7. **Manual rerender** → dispatch `rerenderWidget({ name: 'WidgetName' })` to trigger refetch
+
+## Rerender Widget
+
+Dispatch the `rerenderWidget` Redux action to force a specific widget to re-execute its controller and re-render.
+
+### From any component
+
+```tsx
+import { useDispatch } from 'react-redux';
+import { rerenderWidget } from '@widget';
+
+function SomeComponent() {
+    const dispatch = useDispatch();
+
+    const handleRefresh = () => {
+        dispatch(rerenderWidget({ name: 'UserListWidget' }));
+    };
+
+    return <button onClick={handleRefresh}>Refresh List</button>;
+}
+```
+
+### Behavior
+
+- Resets the widget to skeleton state
+- Re-executes the controller function
+- Re-renders the view with fresh data
+- Other widgets are unaffected
 
 ## Controller
 
@@ -168,6 +198,7 @@ import { controller } from './controller';
 import { Skeleton as skeleton } from './skeleton';
 
 export default createWidgetShell<Props, unknown, CollectionState>({
+    name: 'UserListWidget',
     view,
     controller,
     skeleton,
@@ -267,6 +298,7 @@ export default function App() {
 4. Create `widget.tsx`:
    ```typescript
    export default createWidgetShell<Props, unknown, CollectionState>({
+       name: 'MyNewWidget',
        view: MyView,
        controller,
        skeleton,

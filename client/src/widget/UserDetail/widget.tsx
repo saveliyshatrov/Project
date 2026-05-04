@@ -4,6 +4,7 @@ import { controller, CollectionData, ControllerData } from '@widget/UserDetail/c
 import { Skeleton as skeleton } from '@widget/UserDetail/skeleton';
 
 export default createWidgetShell<Props, ControllerData, CollectionData>({
+    name: 'UserDetailWidget',
     view,
     controller,
     skeleton,
