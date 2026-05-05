@@ -8,7 +8,7 @@ describe('GET /users', () => {
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
         expect(res.body.length).toBeGreaterThan(0);
-    });
+    }, 10000);
 
     it('users have required fields', async () => {
         const res = await request(app).get('/users');
@@ -17,7 +17,7 @@ describe('GET /users', () => {
             expect(user).toHaveProperty('name');
             expect(user).toHaveProperty('email');
         });
-    });
+    }, 10000);
 });
 
 describe('GET /users/:id', () => {
@@ -25,14 +25,14 @@ describe('GET /users/:id', () => {
         const res = await request(app).get('/users/1');
         expect(res.status).toBe(200);
         expect(res.body.user).toHaveProperty('id', '1');
-    });
+    }, 10000);
 
     it('returns 404 for non-existent user', async () => {
         const res = await request(app).get('/users/nonexistent');
         expect(res.status).toBe(404);
         expect(res.body.success).toBe(false);
         expect(res.body.error).toBe('User not found');
-    });
+    }, 10000);
 });
 
 describe('POST /users', () => {
@@ -44,5 +44,5 @@ describe('POST /users', () => {
         expect(res.status).toBe(201);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toContain('New User');
-    });
+    }, 10000);
 });

@@ -19,4 +19,10 @@ describe('GET /resolver', () => {
         const res = await request(app).get('/resolver?resolver=resolveUsers&params={}');
         expect(res.status).toBe(200);
     });
+
+    it('returns 500 when params JSON is invalid', async () => {
+        const res = await request(app).get('/resolver?resolver=resolveUsers&params={invalid}');
+        expect(res.status).toBe(500);
+        expect(res.body).toHaveProperty('error');
+    });
 });
