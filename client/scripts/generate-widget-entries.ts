@@ -34,7 +34,7 @@ export function generateWidgetEntries(): { generated: number; skipped: number } 
 
         const name = dirToWidgetName(dir);
         const indexPath = path.join(dirPath, 'index.tsx');
-        const content = `import { createWidget } from '@widget';
+        const content = `import { createWidget } from '@utils/global';
 
 export const ${name} = createWidget({
     name: '${name}',

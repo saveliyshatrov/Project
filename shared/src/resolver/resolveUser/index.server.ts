@@ -1,6 +1,12 @@
+import { z } from 'zod';
+
 import { User } from '../../constants';
 import { createResolver } from '../createResolver';
 import { normalize } from '../normalize';
+
+export const UserIdParamSchema = z.object({
+    id: z.string().min(1),
+});
 
 export type ResolveUserParams = {
     id: string;
@@ -18,5 +24,6 @@ export const resolveUser = createResolver<ResolveUserParams, User>(
 
         return normalize<User>((user) => user.id)([user], 'users');
     },
-    { name: 'resolveUser' }
+    { name: 'resolveUser' },
+    UserIdParamSchema
 );

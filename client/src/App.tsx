@@ -1,4 +1,4 @@
-import { Slot } from '@widget/Slot';
+import { Slot } from '@utils/global/Slot';
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 

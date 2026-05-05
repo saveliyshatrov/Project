@@ -1,4 +1,6 @@
 import { Collections } from './normalize.js';
+import { ZodType } from 'zod';
+import { ErrorType } from './types';
 
 export type ResolverOptions = {
     name: string;
@@ -17,5 +19,6 @@ type Func<Params, CollectionType> = (
 
 export function createResolver<Params, CollectionType>(
     func: Func<Params, CollectionType>,
-    options: ResolverOptions
-): (params: Params) => Promise<Collections<CollectionType>>;
+    options: ResolverOptions,
+    schema?: ZodType
+): (params: Params) => Promise<Collections<CollectionType> | ErrorType>;

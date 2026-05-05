@@ -39,7 +39,7 @@
         "globals": "17.5.0",
         "shared": "workspace:*",
         "style-loader": "3.3.4",
-        "typescript": "5.3.3",
+        "typescript": "5.4.5",
         "typescript-eslint": "8.59.1",
         "webpack": "5.106.2",
         "webpack-cli": "7.0.2"

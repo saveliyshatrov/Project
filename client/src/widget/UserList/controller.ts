@@ -1,6 +1,6 @@
 import { type Props } from '@components/UserList';
 import { CollectionState } from '@store/collectionsSlice';
-import { ControllerFunction } from '@widget/WidgetShell';
+import { ControllerFunction } from '@utils/global/WidgetShell';
 import { resolveUsers } from 'shared/resolver';
 
 export type ControllerData = unknown;

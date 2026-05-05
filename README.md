@@ -12,6 +12,7 @@ Full-stack monorepo with a React frontend, Express backend, and shared type-safe
 [![Jest](https://img.shields.io/badge/Jest-30-c21325?logo=jest)](https://jestjs.io/)
 [![ESLint](https://img.shields.io/badge/ESLint-9-4b32c3?logo=eslint)](https://eslint.org/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.5-F7B93E?logo=prettier)](https://prettier.io/)
+[![Zod](https://img.shields.io/badge/Zod-4.4.3-blue?logo=zod)](https://zod.dev/)
 
 ## Quick Start
 

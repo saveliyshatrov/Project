@@ -1,4 +1,7 @@
+import { ZodType } from 'zod';
+
 import { Collections } from './normalize.js';
+import { ErrorType } from './types';
 
 export type ResolverOptions = {
     name: string;
@@ -10,33 +13,83 @@ type Ctx = {
     [key: string]: unknown;
 };
 
-type Func<Params, CollectionType> = (
-    ctx: Ctx,
-    params: Params
-) => Collections<CollectionType, string> | Promise<Collections<CollectionType, string>>;
-
 type Promisable<T> = T | Promise<T>;
 
-type Runner<Params, CollectionType> = (params: Params) => Promisable<Collections<CollectionType, string>>;
+type Func<Params, CollectionType> = (ctx: Ctx, params: Params) => Promisable<Collections<CollectionType, string>>;
 
 export const resolverRegistry = new Map<
     string,
-    { func: (ctx: Ctx, params: unknown) => unknown; options: ResolverOptions }
+    { func: (ctx: Ctx, params: unknown) => Promisable<unknown>; options: ResolverOptions; schema?: ZodType }
 >();
 
-const CTX: Ctx = {
-    isServer: true,
+const validateParams = <Params>(params: Params, schema?: ZodType) => {
+    if (!schema) {
+        return {
+            success: true,
+        };
+    }
+
+    const schemaTest = schema.safeParse(params);
+
+    if (schemaTest.success) {
+        return {
+            success: true,
+        };
+    }
+
+    const error =
+        schemaTest.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ') || 'Invalid Params';
+
+    return {
+        error,
+    };
 };
 
 export function createResolver<Params, CollectionType>(
     func: Func<Params, CollectionType>,
-    options: ResolverOptions
-): Runner<Params, CollectionType> {
-    resolverRegistry.set(options.name, { func: func as (ctx: Ctx, params: unknown) => unknown, options });
+    options: ResolverOptions,
+    schema?: ZodType
+) {
+    console.log({
+        func,
+        options,
+        schema,
+    });
 
     if (options.sync) {
-        return ((params: Params) => func(CTX, params)) as Runner<Params, CollectionType>;
+        const newFunc = (ctx: Ctx, params: Params) => {
+            const { error, success } = validateParams(params, schema);
+            if (success) {
+                return func(ctx, params);
+            }
+
+            return {
+                error,
+            };
+        };
+
+        resolverRegistry.set(options.name, {
+            func: newFunc as (ctx: Ctx, params: unknown) => Promisable<unknown | ErrorType>,
+            options,
+            schema,
+        });
+        return;
     }
 
-    return async (params: Params) => func(CTX, params);
+    const newFunc = async (ctx: Ctx, params: Params) => {
+        const { error, success } = validateParams(params, schema);
+        if (success) {
+            return func(ctx, params);
+        }
+
+        return {
+            error,
+        };
+    };
+
+    resolverRegistry.set(options.name, {
+        func: newFunc as (ctx: Ctx, params: unknown) => Promisable<unknown | ErrorType>,
+        options,
+        schema,
+    });
 }

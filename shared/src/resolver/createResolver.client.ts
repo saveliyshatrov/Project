@@ -1,4 +1,5 @@
 import { Collections } from './normalize.js';
+import { ErrorType } from './types';
 
 export type ResolverOptions = {
     name: string;
@@ -15,7 +16,7 @@ type Func<Params, CollectionType> = (
     params: Params
 ) => Collections<CollectionType, string> | Promise<Collections<CollectionType, string>>;
 
-type Runner<Params, CollectionType> = (params: Params) => Promise<Collections<CollectionType, string>>;
+type Runner<Params, CollectionType> = (params: Params) => Promise<Collections<CollectionType, string> | ErrorType>;
 
 export function createResolver<Params, CollectionType>(
     _func: Func<Params, CollectionType>,
@@ -33,6 +34,6 @@ export function createResolver<Params, CollectionType>(
             throw new Error(`Resolver "${options.name}" failed: ${response.statusText}`);
         }
 
-        return (await response.json()) as Collections<CollectionType, string>;
+        return (await response.json()) as Collections<CollectionType, string> | ErrorType;
     };
 }

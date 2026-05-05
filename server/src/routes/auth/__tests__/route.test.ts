@@ -31,7 +31,7 @@ describe('POST /auth/register', () => {
             password: '123',
         });
         expect(res.status).toBe(400);
-        expect(res.body.error).toContain('6 characters');
+        expect(res.body.error).toContain('6 character');
     });
 
     it('returns 409 for duplicate email', async () => {

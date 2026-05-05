@@ -1,8 +1,8 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import React from 'react';
 
-import { clearWidgetRegistry, registerWidget, registerWidgetLazy } from '../../src/widget/registry';
-import { Slot } from '../../src/widget/Slot';
+import { clearWidgetRegistry, registerWidget, registerWidgetLazy } from '../../src/utils/global/registry';
+import { Slot } from '../../src/utils/global/Slot';
 
 describe('Slot', () => {
     beforeEach(() => {

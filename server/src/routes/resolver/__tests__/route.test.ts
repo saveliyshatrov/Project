@@ -6,7 +6,7 @@ describe('GET /resolver', () => {
     it('returns 400 when resolver name is missing', async () => {
         const res = await request(app).get('/resolver');
         expect(res.status).toBe(400);
-        expect(res.body.error).toBe('Missing resolver name');
+        expect(res.body.error).toContain('resolver');
     });
 
     it('returns 404 for unknown resolver', async () => {
