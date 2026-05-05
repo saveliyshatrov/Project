@@ -4,13 +4,14 @@
 
 | File | Description |
 |------|-------------|
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System architecture, data flow, request lifecycle, build pipeline |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System architecture, data flow, request lifecycle, build pipeline, module resolution |
 | [CLIENT.md](./docs/CLIENT.md) | Client package: build config, dev server, entry point, directory structure |
 | [SERVER.md](./docs/SERVER.md) | Server package: Express API, endpoints, device detection, CORS |
-| [SHARED.md](./docs/SHARED.md) | Shared package: build commands, module exports, adding shared code |
-| [WIDGETS.md](./docs/WIDGETS.md) | Widget system: createWidget, WidgetCtx, Slot component, registry |
-| [RESOLVERS.md](./docs/RESOLVERS.md) | Resolver system: createResolver, normalize, adding new resolvers |
+| [SHARED.md](./docs/SHARED.md) | Shared package: dual-build system, exports, shared modules |
+| [WIDGETS.md](./docs/WIDGETS.md) | Widget system: createWidgetShell, createWidget, Slot, registry, lifecycle |
+| [RESOLVERS.md](./docs/RESOLVERS.md) | Resolver system: createResolver, normalize, client/server split |
 | [COLLECTIONS.md](./docs/COLLECTIONS.md) | State management: Redux store, collections slice |
+| [TESTS.md](./docs/TESTS.md) | Testing: Jest config, coverage, test patterns per package |
 
 ## Quick Links
 

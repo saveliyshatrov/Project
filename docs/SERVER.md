@@ -19,7 +19,7 @@ pnpm --filter server run build   # Compile with tsc
 pnpm --filter server run start   # Run production server (node dist/index.js)
 ```
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md#path-aliases) for server module resolution.
+See server `tsconfig.json` for module resolution details.
 
 ## API Endpoints
 
@@ -102,7 +102,10 @@ server/
 
 ## Adding a New Server Endpoint
 
-1. Add route handler in `server/src/index.ts`
-2. Use shared types: `import { User, ApiResponse } from 'shared'`
-3. Add JSDoc `@openapi` block for Swagger documentation
-4. Rebuild server: `pnpm --filter server run build`
+1. Create a route directory: `server/src/routes/myRoute/`
+2. Create `index.ts` with the router and handlers
+3. Create Zod schemas in `schemas/index.ts` for request validation
+4. Use `validate()` middleware from `src/middleware/validate.ts`
+5. Register the router in `src/routes/index.ts`
+6. Add tests in `src/routes/myRoute/__tests__/route.test.ts` using supertest
+7. Rebuild server: `pnpm --filter server run build`

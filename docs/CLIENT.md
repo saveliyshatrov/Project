@@ -31,8 +31,6 @@ pnpm --filter client run build:mobile  # Mobile only
 pnpm --filter client run build:desktop # Desktop only
 ```
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md#platform-specific-code-resolution-1) for platform-specific build details and [ARCHITECTURE.md](./ARCHITECTURE.md#path-aliases) for module resolution.
-
 ## Development Server
 
 `dev-server.mjs` — Custom Express server on port 3000:

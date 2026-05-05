@@ -4,7 +4,7 @@ The shared package produces two outputs:
 - `dist/client/` — ES modules (`.js`) for browser
 - `dist/server/` — CommonJS (`.cjs`) for Node.js
 
-Conditional exports in `shared/package.json` route imports automatically. See [ARCHITECTURE.md](./ARCHITECTURE.md#shared-package-exports) for resolution details.
+Conditional exports in `shared/package.json` route imports automatically.
 
 ## Build System
 
@@ -21,8 +21,6 @@ pnpm --filter shared run build:types                    # Type generation and di
 pnpm --filter shared run dev                            # gen:exports → types → watch (webpack + tsc + distribute)
 pnpm --filter shared run clean                          # rimraf dist
 ```
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md#platform-specific-code-resolution) for platform-specific file naming conventions and [ARCHITECTURE.md](./ARCHITECTURE.md#build-pipeline) for the full build pipeline.
 
 ## Shared Modules
 
@@ -79,8 +77,10 @@ This allows `import { User, formatUser, VERSION } from 'shared'`.
 4. Rebuild shared: `pnpm --filter shared run build`
 
 5. Import in client or server:
-   ```typescript
-   import { something } from 'shared';
-   import { myModule } from 'shared/myModule';
-   import { myResolver } from 'shared/resolver/myResolver';
-   ```
+    ```typescript
+    import { something } from 'shared';
+    import { myModule } from 'shared/myModule';
+    import { myResolver } from 'shared/resolver/myResolver';
+    ```
+
+6. Add tests in `shared/__tests__/`.

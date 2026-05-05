@@ -35,4 +35,4 @@ pnpm run dev
 
 ## Documentation
 
-See [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture, build system, widget/resolver guides, API reference, and development workflow.
+See [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture, build system, widget/resolver guides, API reference, testing, and development workflow.
