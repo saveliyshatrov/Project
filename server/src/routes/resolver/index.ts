@@ -22,9 +22,6 @@ router.get('/resolver', validate(ResolverQuerySchema, 'query'), async (req: Requ
     try {
         const parsedParams = params ? JSON.parse(params) : {};
         const result = await entry.func({ isServer: true }, parsedParams);
-        console.log({
-            result__: result,
-        });
         res.json(result);
     } catch (error) {
         res.status(500).json({

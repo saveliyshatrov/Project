@@ -2,3 +2,7 @@ packages:
   - client
   - server
   - shared
+allowBuilds:
+  '@scarf/scarf': false
+  esbuild: false
+  unrs-resolver: false
