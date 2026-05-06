@@ -50,12 +50,6 @@ export function createResolver<Params, CollectionType>(
     options: ResolverOptions,
     schema?: ZodType
 ) {
-    console.log({
-        func,
-        options,
-        schema,
-    });
-
     if (options.sync) {
         const newFunc = (ctx: Ctx, params: Params) => {
             const { error, success } = validateParams(params, schema);
