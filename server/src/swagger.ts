@@ -17,8 +17,11 @@ const UserSchema = z.object({
     email: z.string(),
 });
 
+const UsersSchema = z.array(UserSchema);
+
 // Components
 registry.register('User', UserSchema);
+registry.register('Users', UsersSchema);
 
 // Health
 registry.registerPath({
