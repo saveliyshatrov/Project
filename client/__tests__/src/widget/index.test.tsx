@@ -1,4 +1,8 @@
-import { hasWidget, clearWidgetRegistry } from '../../../src/utils/global/registry';
+import { hasWidget, clearWidgetRegistry } from '../../../src/utils/global/widget/registry';
+
+jest.mock('../../../src/utils/global/routes/registry', () => ({
+    routeRegistry: [],
+}));
 
 describe('UserList widget', () => {
     beforeEach(() => {

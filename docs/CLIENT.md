@@ -75,9 +75,11 @@ root.render(
 
 | File | Purpose |
 |------|---------|
-| `App.tsx` | Base App component (fallback) |
+| `App.tsx` | Base App component — iterates `routeRegistry` to render routes |
 | `App.mobile.tsx` | Mobile-specific App (uses Slot) |
 | `App.desktop.tsx` | Desktop-specific App (uses Slot) |
+
+The App component no longer defines routes inline. All route-to-component bindings live in `registry.ts`, which also hosts the side-effect widget imports. Adding a new route means adding an entry to `routeRegistry` without touching `App.tsx`.
 
 ## Configuration
 
@@ -105,32 +107,43 @@ client/
 │   └── index.html
 └── src/
     ├── index.tsx             # Application entry point
-    ├── App.tsx               # Base App component (fallback)
-    ├── App.mobile.tsx        # Mobile-specific App
-    ├── App.desktop.tsx       # Desktop-specific App
+    ├── App.tsx               # Base App component
     ├── config.ts             # Environment flags
     ├── store/
-    │   ├── index.ts          # Redux store setup (includes collections + widget reducers)
-    │   ├── collectionsSlice.ts  # Collections state slice
-    │   └── widgetSlice.ts    # Widget private data slice
+    │   ├── collections/
+    │   │   └── index.ts      # Collections state slice
+    │   ├── widget/
+    │   │   └── index.ts      # Widget private data slice
+    │   └── index.ts          # Redux store setup (includes collections + widget reducers)
     ├── utils/
     │   └── global/
-    │       ├── index.tsx     # createWidget factory, re-exports
-    │       ├── WidgetShell.tsx  # createWidgetShell factory
-    │       ├── Slot.tsx      # <Slot> component (wraps widgets in WidgetProvider)
-    │       ├── registry.ts   # Widget registry (sync + lazy)
-    │       └── connect.tsx   # WidgetProvider, connect HOC, useWidgetId, useWidgetDispatch
+    │       ├── widget/
+    │       │   ├── index.tsx     # createWidget factory, re-exports
+    │       │   ├── WidgetShell.tsx  # createWidgetShell factory
+    │       │   ├── Slot.tsx      # <Slot> component (wraps widgets in WidgetProvider)
+    │       │   ├── registry.ts   # Widget registry (sync + lazy)
+    │       │   └── connect.tsx   # WidgetProvider, connect HOC, useWidgetId, useWidgetDispatch
+    │       └── routes/
+    │           ├── index.ts      # re-exports
+    │           ├── registry.ts   # Route-to-component bindings + widget registrations
+    │           ├── hook.ts       # hook for using in components
+    │           └── types.ts      # types
     └── widget/
         ├── UserList/
         │   ├── index.tsx     # Generated: createWidget() call
         │   ├── widget.tsx    # createWidgetShell() call
         │   ├── controller.ts # Data fetcher
         │   └── skeleton.tsx  # Loading placeholder
-        └── UserDetail/
+        ├── UserDetail/
+        │   ├── index.tsx
+        │   ├── widget.tsx
+        │   ├── controller.ts
+        │   └── skeleton.tsx
+        └── NotFound/
             ├── index.tsx
             ├── widget.tsx
-            ├── controller.ts
-            └── skeleton.tsx
+            ├── view.tsx
+            └── controller.ts
 ```
 
 ## Adding a Platform-Specific Component

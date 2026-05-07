@@ -15,7 +15,7 @@ export const store = configureStore({
 
 ## Collections Slice
 
-Located at `client/src/store/collectionsSlice.ts`.
+Located at `client/src/store/collections/index.ts`.
 
 ### State Shape
 

@@ -66,6 +66,7 @@ export default createWidgetShell<ViewProps, ControllerData, CollectionData>({
 | `ViewProps` | Props expected by the View component | — |
 | `ControllerData` | Props passed from parent to the widget | `Record<string, unknown>` |
 | `Collections` | Type of collections returned | `CollectionState` |
+| `Params` | Route params type (from `ExtractRouteParams`) | `Record<string, string \| undefined>` |
 
 ## createWidget
 
@@ -75,7 +76,7 @@ Registers the widget in the lazy registry and returns `React.lazy(loader)`, crea
 
 ```typescript
 // client/src/widget/UserList/index.tsx (auto-generated)
-import { createWidget } from '@utils/global';
+import { createWidget } from '@utils/global/widget';
 
 export const UserListWidget = createWidget({
     name: 'UserListWidget',
@@ -97,29 +98,74 @@ export const UserListWidget = createWidget({
 - **Dev**: via `fs.watch` in `dev-server.ts`
 - **Build**: via `prebuild` script in `client/package.json`
 
-## WidgetCtx
+## Type-Safe Routes
 
-Every controller receives a `ctx` object with full page context:
+Route paths are defined as constants in `@utils/global/routes` with automatically inferred parameter types:
 
 ```typescript
-export type WidgetCtx = {
+export const enum ROUTE_NAMES {
+    HOME = 'home',
+    USER_DETAILS = 'user-details',
+    NOT_FOUND = 'not-found',
+}
+
+export const ROUTES = {
+    [ROUTE_NAMES.HOME]: '/',
+    [ROUTE_NAMES.USER_DETAILS]: '/users/:userId',
+    [ROUTE_NAMES.NOT_FOUND]: '*',
+} as const;
+```
+
+The type helper `ExtractRouteParams` extracts the expected params from a path string (`'/users/:userId'` → `{ userId: string }`). Use `buildPath` to generate URLs with type-checked params:
+
+```typescript
+import { ROUTES, buildPath } from '../../routes';
+
+buildPath(ROUTES.HOME);                       // ✅ "/"
+buildPath(ROUTES.USER_DETAIL, { userId: '5' }); // ✅ "/users/5"
+buildPath(ROUTES.USER_DETAIL);                // ❌ TypeScript error — missing params
+```
+
+Add new routes to the `ROUTES` object — the type system automatically infers their params.
+
+## WidgetCtx
+
+Every controller receives a `ctx` object with full page context. The `params` field is typed via a generic parameter:
+
+```typescript
+export type WidgetCtx<Params extends Record<string, string | undefined> = Record<string, string | undefined>> = {
     page: {
         pathname: string;              // Current URL pathname
         search: string;                // Query string (including ?)
         searchParams: URLSearchParams; // Parsed query params
-        params: Readonly<Partial<Record<string, string | undefined>>>; // Route params
+        params: Readonly<Params>;      // Route params — typed via generic
     };
 };
 ```
 
-**Usage in controller:**
+**Usage in controller (no route params):**
 ```typescript
-// controller.ts
+// controller.ts — no route params needed
 export const controller: ControllerFunction<ControllerData, Props, CollectionState> = async ({ ctx }) => {
-    const userId = ctx.page.params.userId;
     const query = ctx.page.searchParams.get('q');
     // ...
 }
+```
+
+**Usage in controller (with typed route params):**
+```typescript
+// controller.ts — extract params type from route
+import { ROUTES, type ExtractRouteParams } from '../../routes';
+
+type UserDetailParams = ExtractRouteParams<typeof ROUTES.USER_DETAIL>;
+// { userId: string }
+
+export const controller: ControllerFunction<
+    ControllerData, Props, CollectionState, UserDetailParams
+> = async ({ ctx }) => {
+    const { userId } = ctx.page.params; // typed as string
+    // ...
+};
 ```
 
 ## Widget Lifecycle
@@ -162,10 +208,10 @@ function SomeComponent() {
 
 ## Controller
 
-Controllers are async functions typed via `ControllerFunction<ControllerData, ViewProps, Collections>`:
+Controllers are async functions typed via `ControllerFunction<ControllerData, ViewProps, Collections, Params>`:
 
 ```typescript
-// controller.ts
+// controller.ts — no route params
 import { ControllerFunction } from '@utils/global/WidgetShell';
 import { resolveUsers } from 'shared/resolver';
 
@@ -177,6 +223,25 @@ export const controller: ControllerFunction<ControllerData, Props, CollectionDat
     return {
         data: { users: Object.values(collection.users) },
     };
+};
+```
+
+```typescript
+// controller.ts — with typed route params
+import { ControllerFunction } from '@utils/global/WidgetShell';
+import { ROUTES, type ExtractRouteParams } from '../../routes';
+import { resolveUser } from 'shared/resolver';
+
+type UserDetailParams = ExtractRouteParams<typeof ROUTES.USER_DETAIL>;
+// { userId: string }
+
+export type ControllerData = unknown;
+export type CollectionData = CollectionState;
+
+export const controller: ControllerFunction<ControllerData, Props, CollectionData, UserDetailParams> = async ({ ctx }) => {
+    const { userId } = ctx.page.params; // typed as string
+    const collection = await resolveUser({ id: userId });
+    return { data: { ... } };
 };
 ```
 
@@ -196,7 +261,7 @@ export const controller: ControllerFunction<ControllerData, Props, CollectionDat
 ```typescript
 // widget.tsx
 import { UserList as view, type Props } from '@components/UserList';
-import { createWidgetShell } from '@utils/global';
+import { createWidgetShell } from '@utils/global/widget';
 import { controller, ControllerData, CollectionData } from '@widget/UserList/controller';
 import { Skeleton as skeleton } from '@widget/UserList/skeleton';
 
@@ -208,16 +273,16 @@ export default createWidgetShell<Props, ControllerData, CollectionData>({
 });
 ```
 
-### UserDetail Widget (with ctx params)
+### UserDetail Widget (with typed route params)
 
 ```typescript
 // widget.tsx
 import { UserDetail as view, type Props } from '@components/UserDetail';
-import { createWidgetShell } from '@utils/global';
-import { controller, CollectionData, ControllerData } from '@widget/UserDetail/controller';
+import { createWidgetShell } from '@utils/global/widget';
+import { controller, CollectionData, ControllerData, UserDetailParams } from '@widget/UserDetail/controller';
 import { Skeleton as skeleton } from '@widget/UserDetail/skeleton';
 
-export default createWidgetShell<Props, ControllerData, CollectionData>({
+export default createWidgetShell<Props, ControllerData, CollectionData, UserDetailParams>({
     name: 'UserDetailWidget',
     view,
     controller,
@@ -227,9 +292,13 @@ export default createWidgetShell<Props, ControllerData, CollectionData>({
 // controller.ts
 import { ControllerFunction } from '@utils/global/WidgetShell';
 import { resolveUser } from 'shared/resolver';
+import { ROUTES, type ExtractRouteParams } from '../../routes';
 
-export const controller: ControllerFunction<unknown, Props, CollectionState> = async ({ ctx }) => {
-    const { userId } = ctx.page.params;
+type UserDetailParams = ExtractRouteParams<typeof ROUTES.USER_DETAIL>;
+// { userId: string }
+
+export const controller: ControllerFunction<unknown, Props, CollectionState, UserDetailParams> = async ({ ctx }) => {
+    const { userId } = ctx.page.params; // typed as string
     if (!userId) return {};
     const collection = await resolveUser({ id: userId });
     return { data: { user: collection.users[userId] } };
@@ -286,22 +355,62 @@ import '@widget/UserList';
 
 ### Usage in Routes
 
-```tsx
-// App.tsx
-import { Slot } from '@utils/global/Slot';
+Routes are registered in `client/src/utils/global/routes/registry.ts`, which maps paths to components and hosts the side-effect widget imports:
+
+```ts
+// registry.ts
 import '@widget/UserDetail';
 import '@widget/UserList';
+import { RouteConfig } from '@utils/global/routes';
+
+export const enum ROUTE_NAMES {
+    HOME = 'home',
+    USER_DETAILS = 'user-details',
+    NOT_FOUND = 'not-found',
+}
+
+export const ROUTES = {
+    [ROUTE_NAMES.HOME]: '/',
+    [ROUTE_NAMES.USER_DETAILS]: '/users/:userId',
+    [ROUTE_NAMES.NOT_FOUND]: '*',
+} as const;
+
+export const routeRegistry: RouteConfig[] = [
+    { path: ROUTES[ROUTE_NAMES.HOME], widgetName: 'UserListWidget', pageId: ROUTE_NAMES.HOME },
+    { path: ROUTES[ROUTE_NAMES.USER_DETAILS], widgetName: 'UserDetailWidget', pageId: ROUTE_NAMES.USER_DETAILS },
+    { path: ROUTES[ROUTE_NAMES.NOT_FOUND], widgetName: 'NotFoundWidget', pageId: ROUTE_NAMES.NOT_FOUND },
+];
+```
+
+Each entry has a `pageId` — a human-readable identifier for the current page. Use the `usePageId()` hook in any component to get it:
+
+```tsx
+import { usePageId } from './routeRegistry';
+
+function MyComponent() {
+    const pageId = usePageId();
+    // 'user-list', 'user-detail', 'not-found', ...
+}
+```
+
+`App.tsx` simply iterates the registry:
+
+```tsx
+// App.tsx
+import { routeRegistry } from './routeRegistry';
 
 export default function App() {
     return (
         <Routes>
-            <Route path="/" element={<Slot name="UserListWidget" />} />
-            <Route path="/users/:userId" element={<Slot name="UserDetailWidget" />} />
-            <Route path="*" element={<div>404</div>} />
+            {routeRegistry.map(({ path, element }) => (
+                <Route key={path} path={path} element={element} />
+            ))}
         </Routes>
     );
 }
 ```
+
+Adding a new widget route never requires editing `App.tsx` — just add an entry to `routeRegistry`.
 
 ## Private Widget Store
 
@@ -309,7 +418,7 @@ Each widget instance has access to a **private namespace** in the Redux `widget`
 
 ### widgetSlice
 
-Located at `client/src/store/widgetSlice.ts`.
+Located at `client/src/store/widget/index.ts`.
 
 A Redux slice that holds widget-scoped data, keyed by instance ID:
 
@@ -346,7 +455,7 @@ connect<OwnProps, MappedProps>(
 The `dispatch` injected by `connect` is scoped — it only writes to the calling widget's namespace. Calling `dispatch({ key: value })` dispatches `updateWidgetData` with the widget's instance ID, so data never leaks to other widgets.
 
 ```tsx
-import { connect } from '@utils/global';
+import { connect } from '@utils/global/widget';
 
 type OwnProps = { initial?: string };
 type MappedProps = { value: string };
@@ -442,18 +551,40 @@ State updated → useSelector re-runs → connect re-maps props → View re-rend
 ## Adding a New Widget
 
 1. Create a directory: `client/src/widget/MyNewWidget/`
-2. Create `controller.ts`:
+2. If the widget depends on route params, add a path to `@utils/global/routes`:
    ```typescript
+   export const ROUTES = {
+       HOME: '/',
+       USER_DETAIL: '/users/:userId',
+       MY_NEW: '/my-new', // add new route here
+   } as const;
+   ```
+3. Create `controller.ts`:
+   ```typescript
+   // Without route params
    import { ControllerFunction } from '@utils/global/WidgetShell';
 
    export const controller: ControllerFunction<unknown, Props, CollectionState> = async () => ({ ... });
    ```
-3. Create `skeleton.tsx`:
+   If the widget needs route params, import the route type:
+   ```typescript
+   // With typed route params
+   import { ControllerFunction } from '@utils/global/WidgetShell';
+   import { ROUTES, type ExtractRouteParams } from '../../routes';
+
+   type MyNewParams = ExtractRouteParams<typeof ROUTES.MY_NEW>;
+
+   export const controller: ControllerFunction<unknown, Props, CollectionState, MyNewParams> = async ({ ctx }) => {
+       const { paramName } = ctx.page.params; // typed as string
+   };
+   ```
+4. Create `skeleton.tsx`:
    ```typescript
    export const Skeleton = () => <div>Loading...</div>;
    ```
-4. Create `widget.tsx`:
+5. Create `widget.tsx`:
    ```typescript
+   // Without route params
    export default createWidgetShell<Props, unknown, CollectionState>({
        name: 'MyNewWidget',
        view: MyView,
@@ -461,5 +592,27 @@ State updated → useSelector re-runs → connect re-maps props → View re-rend
        skeleton,
    });
    ```
-5. Run `pnpm run prebuild` (or restart dev server) → `index.tsx` is generated
-6. Import in `App.tsx` and use `<Slot name="MyNewWidget" />`
+   If the controller uses typed params, pass them as the 4th type arg:
+   ```typescript
+   // With typed route params
+   export default createWidgetShell<Props, unknown, CollectionState, MyNewParams>({
+       name: 'MyNewWidget',
+       view: MyView,
+       controller,
+       skeleton,
+   });
+   ```
+6. Run `pnpm run prebuild` (or restart dev server) → `index.tsx` is generated
+7. Add the route binding to `client/src/utils/global/routes/registry.ts`:
+   ```typescript
+   import '@widget/MyNewWidget';
+   import { ROUTES } from './routes';
+
+    export const routeRegistry: RouteConfig[] = [
+        { path: ROUTES.HOME, element: <Slot name="UserListWidget" />, pageId: 'user-list' },
+        { path: ROUTES.USER_DETAIL, element: <Slot name="UserDetailWidget" />, pageId: 'user-detail' },
+        { path: ROUTES.MY_NEW, element: <Slot name="MyNewWidget" />, pageId: 'my-new' },
+        { path: '*', element: <div>Wow, you found 404</div>, pageId: 'not-found' },
+    ];
+   ```
+   No changes to `App.tsx` are needed — it iterates the registry automatically.

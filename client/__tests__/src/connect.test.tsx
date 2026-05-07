@@ -4,8 +4,8 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import { store } from '../../src/store';
-import { updateWidgetData } from '../../src/store/widgetSlice';
-import { WidgetProvider, connect, useWidgetDispatch } from '../../src/utils/global/connect';
+import { updateWidgetData } from '../../src/store/widget';
+import { WidgetProvider, connect, useWidgetDispatch } from '../../src/utils/global/widget/connect';
 
 describe('connect HOC', () => {
     const renderWithProviders = (ui: React.ReactElement) => {

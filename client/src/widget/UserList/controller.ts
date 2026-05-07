@@ -1,6 +1,6 @@
 import { type Props } from '@components/UserList';
-import { CollectionState } from '@store/collectionsSlice';
-import { ControllerFunction } from '@utils/global/WidgetShell';
+import { CollectionState } from '@store/collections';
+import { ControllerFunction } from '@utils/global/widget/WidgetShell';
 import { resolveUsers } from 'shared/resolver';
 
 export type ControllerData = unknown;
@@ -11,6 +11,9 @@ export const controller: ControllerFunction<ControllerData, Props, CollectionDat
     return {
         data: {
             users: Object.values(userCollection.users),
+        },
+        collections: {
+            userCollection,
         },
     };
 };

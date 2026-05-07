@@ -1,4 +1,4 @@
-import { reducer, updateWidgetData, clearWidgetData } from '../../src/store/widgetSlice';
+import { reducer, updateWidgetData, clearWidgetData } from '../../src/store/widget';
 
 describe('widgetSlice', () => {
     it('returns initial state', () => {

@@ -40,6 +40,10 @@ root (project)
 
 Client and server are isolated from each other — they only communicate through the shared package and HTTP.
 
+### Type-Safe Routes
+
+Route paths are centralized in `@utils/global/routes` as const objects with auto-inferred parameter types via `ExtractRouteParams`. Route-to-component bindings live in `client/src/utils/global/routes/registry.ts`, which maps each path to its element, a human-readable `pageId`, and hosts the side-effect widget imports. `App.tsx` iterates the registry to render `<Route>` elements — adding a new widget route never requires editing `App.tsx`. Controllers extract params via `ExtractRouteParams<typeof ROUTES.X>` to get compile-time-checked `ctx.page.params`. Any component can access the current page's identifier via the `usePageId()` hook exported from `client/src/utils/global/routes/hook.ts`.
+
 ### Widget Private Store
 
 Each widget instance gets a private namespace in the Redux `widget` slice, created via `WidgetProvider` in `<Slot />`. Widgets access their private data through the `connect` HOC or `useWidgetDispatch` hook — updates are scoped to the instance's key (`*Widget-{name}-{counter}`) and never leak between instances.

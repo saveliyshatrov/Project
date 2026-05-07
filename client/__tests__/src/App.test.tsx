@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import App from '../../src/App';
 import { store } from '../../src/store';
-import { registerWidget, clearWidgetRegistry } from '../../src/utils/global/registry';
+import { registerWidget, clearWidgetRegistry } from '../../src/utils/global/widget/registry';
 
 describe('App', () => {
     beforeEach(() => {
@@ -27,9 +27,12 @@ describe('App', () => {
         registerWidget('UserDetailWidget', {
             component: () => <div>User Detail</div>,
         });
+        registerWidget('NotFoundWidget', {
+            component: () => <div>Wow, you found 404!</div>,
+        });
 
         renderWithProviders(<App />, ['/unknown-path']);
-        expect(screen.getByText('Wow, you found 404')).toBeInTheDocument();
+        expect(screen.getByText('Wow, you found 404!')).toBeInTheDocument();
     });
 
     it('renders UserListWidget on root path', () => {

@@ -4,8 +4,12 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import { store } from '../../src/store';
-import { rerenderWidget } from '../../src/store/collectionsSlice';
-import { createWidgetShell } from '../../src/utils/global/WidgetShell';
+import { rerenderWidget } from '../../src/store/widgets';
+import { createWidgetShell } from '../../src/utils/global/widget';
+
+jest.mock('../../src/utils/global/routes/registry', () => ({
+    routeRegistry: [],
+}));
 
 describe('WidgetShell', () => {
     const renderWithProviders = (ui: React.ReactElement) => {
@@ -104,7 +108,7 @@ describe('WidgetShell', () => {
 
         await waitFor(() => {
             const state = store.getState();
-            expect(state.collections.collections.users).toHaveProperty('1');
+            expect(state.collections.users).toHaveProperty('1');
         });
     });
 

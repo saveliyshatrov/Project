@@ -4,7 +4,7 @@ import {
     hasWidget,
     registerWidget,
     registerWidgetLazy,
-} from '../../src/utils/global/registry';
+} from '../../src/utils/global/widget/registry';
 
 describe('registerWidget', () => {
     beforeEach(() => {

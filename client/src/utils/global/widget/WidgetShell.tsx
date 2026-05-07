@@ -1,31 +1,41 @@
-import { CollectionState, updateCollection } from '@store/collectionsSlice';
-import { updateWidgetData } from '@store/widgetSlice';
+import { RootState } from '@store';
+import { CollectionState, updateCollection } from '@store/collections';
+import { updateWidgetData } from '@store/widget';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useParams, useSearchParams } from 'react-router';
 
 import { useWidgetId } from './connect';
 
-export type WidgetCtx = {
+type ParamsType = Record<string, string | undefined>;
+
+type Ctx<ControllerData, Params extends ParamsType = ParamsType> = { ctx: WidgetCtx<Params> } & ControllerData;
+
+export type WidgetCtx<Params extends ParamsType = ParamsType> = {
     page: {
         pathname: string;
         search: string;
         searchParams: URLSearchParams;
-        params: Readonly<Partial<Record<string, string | undefined>>>;
+        params: Readonly<Params>;
     };
 };
 
-export type ControllerFunction<ControllerData, ViewProps, Collections> = (
-    ctx: { ctx: WidgetCtx } & ControllerData
+export type ControllerFunction<ControllerData, ViewProps, Collections, Params extends ParamsType = ParamsType> = (
+    ctx: Ctx<ControllerData, Params>
 ) => Promise<{
     data?: Partial<ViewProps>;
     collections?: Collections;
 } | null>;
 
-type WidgetShellConfig<ViewProps, ControllerData, Collections extends CollectionState = CollectionState> = {
+type WidgetShellConfig<
+    ViewProps,
+    ControllerData,
+    Collections extends CollectionState,
+    Params extends ParamsType = ParamsType,
+> = {
     name: string;
     view: React.ComponentType<ViewProps>;
-    controller: (ctx: { ctx: WidgetCtx } & ControllerData) => Promise<{
+    controller: (ctx: { ctx: WidgetCtx<Params> } & ControllerData) => Promise<{
         data?: Partial<ViewProps>;
         collections?: Collections;
     } | null>;
@@ -36,7 +46,8 @@ export function createWidgetShell<
     ViewProps,
     ControllerData = Record<string, unknown>,
     Collections extends CollectionState = CollectionState,
->(config: WidgetShellConfig<ViewProps, ControllerData, Collections>): React.ComponentType<ControllerData> {
+    Params extends ParamsType = ParamsType,
+>(config: WidgetShellConfig<ViewProps, ControllerData, Collections, Params>): React.ComponentType<ControllerData> {
     const { name, view: View, controller, skeleton: Skeleton } = config;
 
     const WidgetShell = (props: ControllerData) => {
@@ -48,24 +59,18 @@ export function createWidgetShell<
         const location = useLocation();
         const [searchParams] = useSearchParams();
         const widgetId = useWidgetId();
-        const rerenderVersion = useSelector(
-            (state: { collections: { widgets: { rerenderVersions: Record<string, number> } } }) =>
-                state.collections.widgets.rerenderVersions[name] ?? 0
-        );
+        const rerenderVersion = useSelector((state: RootState) => state.widgets.rerenderVersions[name] ?? 0);
 
-        const ctx: WidgetCtx = {
+        const ctx: WidgetCtx<Params> = {
             page: {
                 pathname: location.pathname,
                 search: location.search,
                 searchParams,
-                params,
+                params: params as Readonly<Params>,
             },
         };
 
-        const controllerDataInfo: { ctx: WidgetCtx } & ControllerData = {
-            ...props,
-            ctx,
-        };
+        const controllerDataInfo = { ...props, ctx };
 
         const controllerRef = React.useRef(controller);
         controllerRef.current = controller;

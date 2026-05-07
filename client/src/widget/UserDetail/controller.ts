@@ -1,16 +1,19 @@
 import { type Props } from '@components/UserDetail';
-import { CollectionState } from '@store/collectionsSlice';
-import { ControllerFunction } from '@utils/global/WidgetShell';
+import { CollectionState } from '@store/collections';
+import { ROUTE_NAMES, ROUTES, type ExtractRouteParams } from '@utils/global/routes';
+import { ControllerFunction } from '@utils/global/widget/WidgetShell';
 import { resolveUser } from 'shared/resolver';
+
+export type UserDetailParams = ExtractRouteParams<(typeof ROUTES)[ROUTE_NAMES.USER_DETAILS]>;
 
 export type ControllerData = unknown;
 export type CollectionData = CollectionState;
 
-export const controller: ControllerFunction<ControllerData, Props, CollectionData> = async ({ ctx }) => {
+export type ControllerType = ControllerFunction<ControllerData, Props, CollectionData, UserDetailParams>;
+
+export const controller: ControllerType = async ({ ctx }) => {
     const { userId } = ctx.page.params;
-    if (!userId) {
-        return {};
-    }
+    if (!userId) return {};
     const userCollection = await resolveUser({ id: userId });
     return {
         data: {

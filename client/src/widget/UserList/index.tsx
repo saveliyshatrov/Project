@@ -1,4 +1,4 @@
-import { createWidget } from '@utils/global';
+import { createWidget } from '@utils/global/widget';
 
 export const UserListWidget = createWidget({
     name: 'UserListWidget',

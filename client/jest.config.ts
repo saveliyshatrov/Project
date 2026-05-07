@@ -27,6 +27,7 @@ const config: Config = {
         '!src/index.tsx',
         '!src/widget/**/*.tsx',
         '!src/widget/**/controller.ts',
+        '!**/types.*',
     ],
     coverageThreshold: {
         global: {

@@ -1,5 +1,5 @@
 import type { RootState, AppDispatch } from '@store';
-import { updateWidgetData } from '@store/widgetSlice';
+import { updateWidgetData } from '@store/widget';
 import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
@@ -13,14 +13,16 @@ export function useWidgetId(): string | null {
     return React.useContext(WidgetContext);
 }
 
-type ScopedDispatch = (data: Record<string, unknown>) => void;
+type Data = Record<string, unknown>;
+
+type ScopedDispatch = (data: Data) => void;
 
 export function useWidgetDispatch(): ScopedDispatch | null {
     const dispatch = useDispatch<AppDispatch>();
     const widgetId = useWidgetId();
 
     const customDispatch = useCallback(
-        (data: Record<string, unknown>) => {
+        (data: Data) => {
             if (widgetId) {
                 dispatch(updateWidgetData({ id: widgetId, data }));
             }
@@ -33,10 +35,17 @@ export function useWidgetDispatch(): ScopedDispatch | null {
     return customDispatch;
 }
 
-export function connect<OwnProps extends Record<string, unknown>, MappedProps extends Record<string, unknown>>(
-    mapStateToProps: (widgetData: Record<string, unknown>, ownProps: OwnProps) => MappedProps
-): (Component: React.ComponentType<MappedProps & { dispatch: ScopedDispatch }>) => React.ComponentType<OwnProps> {
-    return (Component: React.ComponentType<MappedProps & { dispatch: ScopedDispatch }>) => {
+type ScopedDispatchProps<MappedProps extends Data> = React.ComponentType<MappedProps & { dispatch: ScopedDispatch }>;
+
+type MapStateToProps<OwnProps extends Data, MappedProps extends Data> = (
+    widgetData: Data,
+    ownProps: OwnProps
+) => MappedProps;
+
+export function connect<OwnProps extends Data, MappedProps extends Data>(
+    mapStateToProps: MapStateToProps<OwnProps, MappedProps>
+): (Component: ScopedDispatchProps<MappedProps>) => React.ComponentType<OwnProps> {
+    return (Component: ScopedDispatchProps<MappedProps>) => {
         const Wrapped = (ownProps: OwnProps) => {
             const widgetId = useWidgetId();
             const widgetData = useSelector((state: RootState) => (widgetId ? (state.widget[widgetId] ?? {}) : {}));
