@@ -23,12 +23,11 @@ export function createResolver<Params, CollectionType>(
     options: ResolverOptions
 ): Runner<Params, CollectionType> {
     return async (params: Params) => {
-        const query = new URLSearchParams({
-            resolver: options.name,
-            params: JSON.stringify(params),
+        const response = await fetch(`/resolver?resolver=${options.name}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ params }),
         });
-
-        const response = await fetch(`/resolver?${query.toString()}`);
 
         if (!response.ok) {
             throw new Error(`Resolver "${options.name}" failed: ${response.statusText}`);

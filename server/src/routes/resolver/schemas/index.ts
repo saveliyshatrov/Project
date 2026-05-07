@@ -5,5 +5,8 @@ extendZodWithOpenApi(z);
 
 export const ResolverQuerySchema = z.object({
     resolver: z.string().min(1),
-    params: z.string().optional(),
+});
+
+export const ResolverParamsBodySchema = z.object({
+    params: z.record(z.string(), z.unknown()).optional(),
 });

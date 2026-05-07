@@ -5,7 +5,7 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 import { RegisterSchema } from './routes/auth/schemas';
-import { ResolverQuerySchema } from './routes/resolver/schemas';
+import { ResolverParamsBodySchema, ResolverQuerySchema } from './routes/resolver/schemas';
 import { CreateUserSchema, UserIdParamSchema } from './routes/users/schemas';
 
 const registry = new OpenAPIRegistry();
@@ -196,12 +196,19 @@ registry.registerPath({
 
 // Resolver
 registry.registerPath({
-    method: 'get',
+    method: 'post',
     path: '/resolver',
     tags: ['Resolver'],
     summary: 'Execute a shared resolver',
     request: {
         query: ResolverQuerySchema,
+        body: {
+            content: {
+                'application/json': {
+                    schema: ResolverParamsBodySchema,
+                },
+            },
+        },
     },
     responses: {
         200: {

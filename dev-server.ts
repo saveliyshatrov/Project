@@ -55,10 +55,16 @@ desktopCompiler.watch({}, () => {});
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
+app.use(express.json());
+
 app.use('/resolver', async (req, res) => {
     try {
         const query = new URLSearchParams(req.query as Record<string, string>);
-        const response = await fetch(`${API_URL}/resolver?${query.toString()}`);
+        const response = await fetch(`${API_URL}/resolver?${query.toString()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body),
+        });
         const data = await response.json();
         res.status(response.status).json(data);
     } catch {

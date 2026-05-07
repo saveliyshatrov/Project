@@ -78,7 +78,7 @@ controller({ ctx })
     ▼
 resolveUsers({ limit: 10 })        ← resolver (client stub)
     │
-    ├── GET /resolver?resolver=resolveUsers&params=...
+    ├── POST /resolver?resolver=resolveUsers { params: {...} }
     │
     ▼
 Server resolver registry lookup
@@ -129,8 +129,8 @@ Collections dispatched to Redux → Components re-render with data
 ```
 Client resolver stub
     │
-    ├── Serialize params → URL query string
-    ├── GET /resolver?resolver=NAME&params=JSON
+    ├── Serialize params → JSON body
+    ├── POST /resolver?resolver=NAME { params: {...} }
     │
     ▼
 Server /resolver endpoint

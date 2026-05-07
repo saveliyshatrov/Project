@@ -11,7 +11,7 @@ describe('createResolver (client)', () => {
         global.fetch = originalFetch;
     });
 
-    it('makes a fetch request with resolver name and params', async () => {
+    it('makes a POST fetch request with resolver name in query and params in body', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
             json: async () => ({ users: { '1': { id: '1' } } }),
@@ -20,10 +20,11 @@ describe('createResolver (client)', () => {
         const resolver = createResolver<any, any>(() => ({}), { name: 'testResolver' });
         await resolver({ id: '1' });
 
-        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/resolver?resolver=testResolver'));
-        expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining(encodeURIComponent(JSON.stringify({ id: '1' })))
-        );
+        expect(global.fetch).toHaveBeenCalledWith('/resolver?resolver=testResolver', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ params: { id: '1' } }),
+        });
     });
 
     it('returns parsed JSON response on success', async () => {
@@ -50,7 +51,7 @@ describe('createResolver (client)', () => {
         await expect(resolver({})).rejects.toThrow('Resolver "missingResolver" failed: Not Found');
     });
 
-    it('includes params in query string', async () => {
+    it('sends params in request body and resolver name in query', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
             json: async () => ({}),
@@ -59,10 +60,15 @@ describe('createResolver (client)', () => {
         const resolver = createResolver<any, any>(() => ({}), { name: 'paramResolver' });
         await resolver({ limit: 10, offset: 5 });
 
-        const fetchCall = (global.fetch as jest.Mock).mock.calls[0][0];
-        const url = new URL(fetchCall, 'http://localhost');
-        expect(url.searchParams.get('resolver')).toBe('paramResolver');
-        expect(JSON.parse(url.searchParams.get('params')!)).toEqual({ limit: 10, offset: 5 });
+        const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+        expect(fetchCall[0]).toBe('/resolver?resolver=paramResolver');
+        expect(fetchCall[1]).toMatchObject({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        expect(JSON.parse(fetchCall[1].body)).toEqual({
+            params: { limit: 10, offset: 5 },
+        });
     });
 
     it('handles sync option in options', async () => {

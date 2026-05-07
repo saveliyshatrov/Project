@@ -2,27 +2,21 @@ import request from 'supertest';
 
 import app from '../../../index';
 
-describe('GET /resolver', () => {
+describe('POST /resolver', () => {
     it('returns 400 when resolver name is missing', async () => {
-        const res = await request(app).get('/resolver');
+        const res = await request(app).post('/resolver').send({});
         expect(res.status).toBe(400);
         expect(res.body.error).toContain('resolver');
     });
 
     it('returns 404 for unknown resolver', async () => {
-        const res = await request(app).get('/resolver?resolver=unknown');
+        const res = await request(app).post('/resolver?resolver=unknown').send({});
         expect(res.status).toBe(404);
         expect(res.body.error).toContain('not found');
     });
 
     it('returns 200 for valid resolver', async () => {
-        const res = await request(app).get('/resolver?resolver=resolveUsers&params={}');
+        const res = await request(app).post('/resolver?resolver=resolveUsers').send({ params: {} });
         expect(res.status).toBe(200);
-    });
-
-    it('returns 500 when params JSON is invalid', async () => {
-        const res = await request(app).get('/resolver?resolver=resolveUsers&params={invalid}');
-        expect(res.status).toBe(500);
-        expect(res.body).toHaveProperty('error');
     });
 });

@@ -10,7 +10,8 @@ Client                          Server
 resolveUsers()                  resolveUsers()
     │   (stub: fetch)                │
     ├──────────────────────────────► │
-    │   GET /resolver?resolver=...   │
+    │   POST /resolver?resolver=...  │
+    │   { params }                   │
     │                                ├──► execute registered resolver
     │                                ├──► normalize data
     │                                └──► return JSON
@@ -30,8 +31,8 @@ export function createResolver<Params, CollectionType>(
 ```
 
 The client version returns a runner that:
-1. Serializes params via URL query (`resolver` + `params`)
-2. Fetches `GET /resolver?resolver=NAME&params=...`
+1. Appends resolver name as a query parameter: `POST /resolver?resolver=NAME`
+2. Serializes params into a JSON body
 3. Returns the JSON response as `Promise<Collections<CollectionType>>`
 
 The `func` argument is a stub (typically `() => ({})`) — it is never executed.
@@ -230,12 +231,24 @@ Create a folder `shared/src/resolver/myResolver/` with three files:
 
 ## Resolver Endpoint
 
-`GET /resolver?resolver=NAME&params=JSON`
+`POST /resolver?resolver=resolveUsers`
 
-| Query Param | Description |
-|-------------|-------------|
+**Query parameters:**
+
+| Param | Description |
+|-------|-------------|
 | `resolver` | Name of the resolver to execute (must be registered) |
-| `params` | JSON-serialized params object for the resolver |
+
+**Request body (JSON):**
+```json
+{
+    "params": { "limit": 10, "offset": 0 }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `params` | Optional params object for the resolver |
 
 **Response:**
 ```json

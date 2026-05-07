@@ -3,31 +3,33 @@ import { resolverRegistry } from 'shared/resolver';
 
 import { validate } from '../../middleware/validate';
 
-import { ResolverQuerySchema } from './schemas';
+import { ResolverParamsBodySchema, ResolverQuerySchema } from './schemas';
 
 const router = Router();
 
-router.get('/resolver', validate(ResolverQuerySchema, 'query'), async (req: Request, res: Response) => {
-    const { resolver, params } = (req as unknown as Record<string, unknown>).validatedQuery as {
-        resolver: string;
-        params?: string;
-    };
+router.post(
+    '/resolver',
+    validate(ResolverQuerySchema, 'query'),
+    validate(ResolverParamsBodySchema, 'body'),
+    async (req: Request, res: Response) => {
+        const { resolver } = (req as unknown as Record<string, unknown>).validatedQuery as { resolver: string };
+        const { params } = req.body as { params?: Record<string, unknown> };
 
-    const entry = resolverRegistry.get(resolver);
-    if (!entry) {
-        res.status(200).json({ error: `Resolver "${resolver}" not found` });
-        return;
-    }
+        const entry = resolverRegistry.get(resolver);
+        if (!entry) {
+            res.status(404).json({ error: `Resolver "${resolver}" not found` });
+            return;
+        }
 
-    try {
-        const parsedParams = params ? JSON.parse(params) : {};
-        const result = await entry.func({ isServer: true }, parsedParams);
-        res.json(result);
-    } catch (error) {
-        res.status(200).json({
-            error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        try {
+            const result = await entry.func({ isServer: true }, params ?? {});
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({
+                error: error instanceof Error ? error.message : 'Unknown error',
+            });
+        }
     }
-});
+);
 
 export default router;
