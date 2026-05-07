@@ -10,6 +10,9 @@ export { createWidgetShell } from './WidgetShell';
 
 export { rerenderWidget };
 
+export { connect, useWidgetId, useWidgetDispatch } from './connect';
+export type { WidgetProvider } from './connect';
+
 type WidgetLoader = () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>;
 
 type WidgetParams = {

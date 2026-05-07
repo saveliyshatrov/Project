@@ -1,7 +1,10 @@
 import { CollectionState, updateCollection } from '@store/collectionsSlice';
+import { updateWidgetData } from '@store/widgetSlice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useParams, useSearchParams } from 'react-router';
+
+import { useWidgetId } from './connect';
 
 export type WidgetCtx = {
     page: {
@@ -44,6 +47,7 @@ export function createWidgetShell<
         const params = useParams();
         const location = useLocation();
         const [searchParams] = useSearchParams();
+        const widgetId = useWidgetId();
         const rerenderVersion = useSelector(
             (state: { collections: { widgets: { rerenderVersions: Record<string, number> } } }) =>
                 state.collections.widgets.rerenderVersions[name] ?? 0
@@ -81,6 +85,9 @@ export function createWidgetShell<
 
                     if (data) {
                         setControllerData(data);
+                        if (widgetId) {
+                            dispatch(updateWidgetData({ id: widgetId, data: data as Record<string, unknown> }));
+                        }
                     }
 
                     if (collections) {
