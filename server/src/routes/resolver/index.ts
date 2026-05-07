@@ -15,7 +15,7 @@ router.get('/resolver', validate(ResolverQuerySchema, 'query'), async (req: Requ
 
     const entry = resolverRegistry.get(resolver);
     if (!entry) {
-        res.status(404).json({ success: false, error: `Resolver "${resolver}" not found` });
+        res.status(200).json({ error: `Resolver "${resolver}" not found` });
         return;
     }
 
@@ -24,8 +24,7 @@ router.get('/resolver', validate(ResolverQuerySchema, 'query'), async (req: Requ
         const result = await entry.func({ isServer: true }, parsedParams);
         res.json(result);
     } catch (error) {
-        res.status(500).json({
-            success: false,
+        res.status(200).json({
             error: error instanceof Error ? error.message : 'Unknown error',
         });
     }

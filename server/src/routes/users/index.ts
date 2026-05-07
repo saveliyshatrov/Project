@@ -15,9 +15,6 @@ router.get('/users', (req: Request, res: Response) => {
 
 router.get('/users/:id', validate(UserIdParamSchema, 'params'), (req: Request, res: Response) => {
     const { id } = req.params as z.infer<typeof UserIdParamSchema>;
-    console.log({
-        id__: id,
-    });
     const user = users.find((user) => user.id === id);
 
     if (user) {
