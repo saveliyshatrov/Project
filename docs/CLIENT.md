@@ -33,7 +33,7 @@ pnpm --filter client run build:desktop # Desktop only
 
 ## Development Server
 
-`dev-server.mjs` — Custom Express server on port 3000:
+`dev-server.ts` — Custom Express server (located at project root) on port 3000:
 
 - Runs webpack in watch mode for both mobile and desktop
 - Serves static files from `dist/mobile` and `dist/desktop`
@@ -92,13 +92,15 @@ Set via webpack `DefinePlugin` to `true` in the client build.
 ## Directory Structure
 
 ```
+Project root/
+├── webpack.client.base.config.ts   # Config factory: generates platform-specific configs
+├── webpack.client.dev.config.ts    # Dev: single config for mobile platform
+├── webpack.client.prod.config.ts   # Production: array of configs for mobile + desktop
+├── dev-server.ts                   # Custom Express dev server (port 3000)
+│
 client/
 ├── package.json
 ├── tsconfig.json
-├── webpack.base.config.ts
-├── webpack.dev.config.ts
-├── webpack.prod.config.ts
-├── dev-server.mjs
 ├── public/
 │   └── index.html
 └── src/
@@ -110,12 +112,23 @@ client/
     ├── store/
     │   ├── index.ts          # Redux store setup
     │   └── collectionsSlice.ts  # Collections state slice
+    ├── utils/
+    │   └── global/
+    │       ├── index.tsx     # createWidget factory, re-exports
+    │       ├── WidgetShell.tsx  # createWidgetShell factory
+    │       ├── Slot.tsx      # <Slot> component
+    │       └── registry.ts   # Widget registry (sync + lazy)
     └── widget/
-        ├── index.tsx         # createWidget factory
-        ├── registry.ts       # Widget registry
-        ├── Slot.tsx          # Render widget by name
-        ├── UserList.tsx      # User list widget
-        └── UserDetail.tsx    # User detail widget
+        ├── UserList/
+        │   ├── index.tsx     # Generated: createWidget() call
+        │   ├── widget.tsx    # createWidgetShell() call
+        │   ├── controller.ts # Data fetcher
+        │   └── skeleton.tsx  # Loading placeholder
+        └── UserDetail/
+            ├── index.tsx
+            ├── widget.tsx
+            ├── controller.ts
+            └── skeleton.tsx
 ```
 
 ## Adding a Platform-Specific Component

@@ -110,4 +110,14 @@ grep "sensitive data" shared/dist/client/resolver/*.js  # should return nothing
 # Check resolver bundle sizes:
 wc -c shared/dist/client/resolver/resolveUsers.js   # ~130 bytes (stub only)
 wc -c shared/dist/server/resolver/resolveUsers.cjs  # ~770 bytes (real logic)
+
+# Test resolver batch endpoint:
+curl -X POST 'http://localhost:3001/resolver?resolver=resolveUsers' \
+  -H 'Content-Type: application/json' \
+  -d '{"params":{"limit":3}}'
+
+# Test batch endpoint:
+curl -X POST 'http://localhost:3001/resolver/batch' \
+  -H 'Content-Type: application/json' \
+  -d '{"batch":[{"resolver":"resolveUsers","params":{"limit":3}}]}'
 ```

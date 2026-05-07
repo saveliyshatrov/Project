@@ -77,24 +77,35 @@ controller({ ctx })
     │
     ▼
 resolveUsers({ limit: 10 })        ← resolver (client stub)
+resolveUser({ id: '5' })           ← another resolver called in same tick
     │
-    ├── POST /resolver?resolver=resolveUsers { params: {...} }
+    ├── both enqueued in batchQueue
+    ├── setTimeout(flush, 0) scheduled
+    │
+    ▼  (next tick)
+Batch POST /resolver/batch
+    │   { batch: [
+    │     { resolver: 'resolveUsers', params: { limit: 10 } },
+    │     { resolver: 'resolveUser', params: { id: '5' } }
+    │   ]}
     │
     ▼
-Server resolver registry lookup
+Server executes all resolvers in parallel (Promise.all)
     │
-    ├── execute server-side function
-    ├── normalize data into collections
-    │
-    ▼
-JSON response: { users: { '1': {...}, '2': {...} } }
+    ├── resolveUsers → normalize users
+    ├── resolveUser  → normalize single user
     │
     ▼
-Widget receives result
+Array response: [usersResult, userResult]
+    │
+    ▼
+Widget receives its result from the array
     ├── data → merged into component props
     ├── collections → dispatched to Redux store
     └── showSkeleton = false → renders View
 ```
+
+A single resolver call follows the same path but produces a batch of one element.
 
 ## Request Lifecycle
 
@@ -126,15 +137,21 @@ Collections dispatched to Redux → Components re-render with data
 
 ### Resolver Request
 
+#### Individual Call (via `/resolver`)
+
 ```
-Client resolver stub
+Client resolver stub (createResolver.client.ts)
     │
-    ├── Serialize params → JSON body
-    ├── POST /resolver?resolver=NAME { params: {...} }
+    ├── enqueueResolverCall(name, params) → batch queue
+    ├── flush in next tick
+    │
+    ▼
+POST /resolver?resolver=NAME { params: {...} }
     │
     ▼
 Server /resolver endpoint
     │
+    ├── Validate query (resolver name via Zod)
     ├── Look up resolver by name in resolverRegistry
     ├── Execute resolver function (ctx, params)
     ├── Return JSON (normalized collections)
@@ -144,6 +161,33 @@ Client receives collections
     │
     ├── If returned as collections → dispatch to Redux
     ├── If returned as data → merge into component props
+```
+
+#### Batch Call (via `/resolver/batch`)
+
+```
+Multiple resolvers called in same controller
+    │
+    ├── Each call → enqueueResolverCall(name, params)
+    ├── All queued in batchQueue
+    ├── setTimeout(flush, 0) scheduled once
+    │
+    ▼  (microtask boundary)
+flush() sends single POST /resolver/batch
+    │   { batch: [{ resolver, params }, ...] }
+    │
+    ▼
+Server /resolver/batch endpoint
+    │
+    ├── Iterate batch array
+    ├── Execute all resolvers via Promise.all
+    ├── Return array of results (same order)
+    │
+    ▼
+Client batch module distributes results
+    ├── results[0] → first  resolver's promise
+    ├── results[1] → second resolver's promise
+    └── ...
 ```
 
 ## Platform-Specific Code Resolution

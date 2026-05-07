@@ -25,14 +25,16 @@ See server `tsconfig.json` for module resolution details.
 
 **Base URL:** `http://localhost:3001`
 
-| Method | Path | Description | Request Body | Response |
-|--------|------|-------------|--------------|----------|
+| Method | Path | Description | Request Body / Query | Response |
+|--------|------|-------------|---------------------|----------|
 | `GET` | `/health` | Health check | — | `{ status, version, device, platform, browser }` |
 | `GET` | `/device` | Device detection | — | `{ type, platform, browser, isMobile, isTablet, isDesktop, source }` |
 | `GET` | `/users` | Get all users | — | `User[]` |
 | `GET` | `/users/:id` | Get user by ID | — | `{ success, data }` or `{ success: false, error }` |
 | `POST` | `/auth/register` | Register user | `{ name, email, password }` | `{ success, user }` or error |
 | `POST` | `/users` | Create user | `{ name, email }` | `{ success, data }` |
+| `POST` | `/resolver?resolver=NAME` | Execute a single resolver | Query: `resolver` (string). Body: `{ params?: object }` | Normalized collections or `{ error }` |
+| `POST` | `/resolver/batch` | Execute multiple resolvers in batch | `{ batch: [{ resolver, params? }] }` | Array of results in same order |
 | `GET` | `/api-docs` | Swagger UI | — | Swagger documentation |
 
 ## Static File Serving

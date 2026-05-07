@@ -71,9 +71,10 @@ coverageThreshold: {
 | Test File | Tests | Coverage Target |
 |-----------|-------|-----------------|
 | `__tests__/normalize.test.ts` | 5 | `normalize()` — collection creation, empty lists, custom keys, overwrites |
-| `__tests__/createResolver.server.test.ts` | 10 | Registry, sync/async modes, schema validation, context passing |
-| `__tests__/createResolver.client.test.ts` | 5 | Fetch mocking, response parsing, error handling, query params |
-| `__tests__/resolvers.test.ts` | 8 | `resolveUser` and `resolveUsers` registration, validation, execution |
+| `__tests__/createResolver.server.test.ts` | 11 | Registry, sync/async modes, schema validation, context passing |
+| `__tests__/createResolver.client.test.ts` | 5 | Batching via fetch, response parsing, error handling, params in batch |
+| `__tests__/resolverBatch.client.test.ts` | 3 | Batch queue, single call, error rejection |
+| `__tests__/resolvers.test.ts` | 9 | `resolveUser` and `resolveUsers` registration, validation, execution |
 | `__tests__/constants.test.ts` | 4 | VERSION, AUTHOR, User interface, formatUser |
 | `__tests__/getDeviceType.test.ts` | 3 | DeviceType enum, mobile/desktop detection |
 | `__tests__/examples.server.test.ts` | 1 | Server example export |
@@ -94,7 +95,7 @@ coverageThreshold: {
 | `routes/auth/__tests__/route.test.ts` | 4 | Registration, validation, error cases |
 | `routes/device/__tests__/route.test.ts` | 3 | Device detection, user agent parsing |
 | `routes/health/__tests__/route.test.ts` | 3 | Health check, mobile user agent detection |
-| `routes/resolver/__tests__/route.test.ts` | 4 | Missing resolver, unknown resolver, valid execution, invalid JSON |
+| `routes/resolver/__tests__/route.test.ts` | 7 | Missing/unknown resolver, valid execution, batch validation, batch execution, mixed valid/invalid |
 | `routes/users/__tests__/route.test.ts` | 5 | List, by ID, create, 404, field validation |
 | `routes/static/__tests__/route.test.ts` | 1 | Catch-all fallback behavior |
 

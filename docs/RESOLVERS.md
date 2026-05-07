@@ -1,22 +1,80 @@
 # Resolver System
 
-All resolver logic executes **only on the server**. The client receives a lightweight stub that fetches from the `/resolver` endpoint, ensuring zero server-side code or data in client bundles.
+All resolver logic executes **only on the server**. The client receives a lightweight stub that delegates to the batch endpoint, ensuring zero server-side code or data in client bundles.
 
 ## Architecture
 
+All resolver calls from the client go through a **batch queue** that groups multiple calls within the same tick into a single HTTP request. The server also exposes an individual endpoint for direct calls.
+
+### Client → Server (always batched)
+
+Whether one or multiple resolvers are called, they are always enqueued and sent together:
+
 ```
-Client                          Server
-──────                          ──────
-resolveUsers()                  resolveUsers()
-    │   (stub: fetch)                │
-    ├──────────────────────────────► │
-    │   POST /resolver?resolver=...  │
-    │   { params }                   │
-    │                                ├──► execute registered resolver
-    │                                ├──► normalize data
-    │                                └──► return JSON
-    │◄───────────────────────────────┤
-    └─── Promise<Collections> ──────┘
+Controller                          Server
+────────                          ──────
+resolveUsers({ limit: 10 })       resolveUsers()
+resolveUser({ id: '5' })          resolveUser()
+    │                                  │
+    ├── both enqueued in batchQueue    │
+    ├── setTimeout(flush, 0)           │
+    │                                  │
+    ▼  (next tick)                     │
+POST /resolver/batch                  │
+{ batch: [                            │
+  { resolver: 'resolveUsers',         │
+    params: { limit: 10 } },          │
+  { resolver: 'resolveUser',          │
+    params: { id: '5' } }             │
+]}                                    │
+    │                                  │
+    │                                  ├──► resolveUsers (Promise.all)
+    │                                  ├──► resolveUser
+    │                                  └──► return array of results
+    │◄─────────────────────────────────┤
+    └── each promise resolved ────────┘
+```
+
+A single resolver call produces a batch of one element — the endpoint is always `/resolver/batch`.
+
+### Server Direct Endpoint (for debugging / external use)
+
+The server also exposes an individual endpoint, which is NOT used by the client but can be called directly:
+
+```
+curl -X POST 'http://localhost:3001/resolver?resolver=resolveUsers' \
+  -H 'Content-Type: application/json' \
+  -d '{"params":{"limit":10}}'
+```
+
+### Detailed Batching Flow
+
+```
+Controller calls:
+  resolveUsers({ limit: 10 })
+  resolveUser({ id: '5' })
+
+         │
+         ▼
+  enqueueResolverCall('resolveUsers', { limit: 10 })
+  enqueueResolverCall('resolveUser', { id: '5' })
+         │
+         ├── both pushed to batchQueue
+         ├── setTimeout(flush, 0) scheduled once
+         │
+         ▼  (next tick)
+  flush():
+    ├── copy + clear batchQueue
+    ├── fetch POST /resolver/batch
+    │     { batch: [
+    │       { resolver: 'resolveUsers', params: { limit: 10 } },
+    │       { resolver: 'resolveUser', params: { id: '5' } }
+    │     ]}
+    │
+    ▼
+  response.json() → [usersResult, userResult]
+    ├── resolve(usersResult)  → first  Promise
+    └── resolve(userResult)   → second Promise
 ```
 
 ## createResolver
@@ -31,11 +89,32 @@ export function createResolver<Params, CollectionType>(
 ```
 
 The client version returns a runner that:
-1. Appends resolver name as a query parameter: `POST /resolver?resolver=NAME`
-2. Serializes params into a JSON body
-3. Returns the JSON response as `Promise<Collections<CollectionType>>`
+1. Enqueues the call via `enqueueResolverCall(name, params)` into the batch queue
+2. All calls in the queue are flushed together via `setTimeout(fn, 0)` as a single `POST /resolver/batch` request
+3. Returns a `Promise` that resolves with the deserialized result from the batch response array
 
-The `func` argument is a stub (typically `() => ({})`) — it is never executed.
+The `func` argument is a stub (typically `() => ({})`) — it is never executed on the client.
+
+**`resolverBatch.client.ts` (internal):**
+```typescript
+let batchQueue: BatchEntry[] = [];
+let scheduled = false;
+
+function flush(): void {
+    // copy queue, send POST /resolver/batch, resolve/reject each promise
+}
+
+function scheduleFlush(): void {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(flush, 0);
+}
+
+export function enqueueResolverCall<Params, Result>(
+    resolver: string,
+    params: Params
+): Promise<Result>;
+```
 
 ### Server Implementation (`shared/src/resolver/createResolver.server.ts`)
 
@@ -101,35 +180,47 @@ type Collections<Collection> = Record<string, CollectionState<Collection>>;
 **Structure:**
 ```
 shared/src/resolver/resolveUsers/
-├── index.client.ts     # Client stub (fetches from /resolver)
+├── index.client.ts     # Client stub (delegates to batch)
 ├── index.server.ts     # Server implementation (real logic)
 └── index.d.ts          # TypeScript types
 ```
 
 **Client** (`resolveUsers/index.client.ts`):
 ```typescript
-import { Collections } from '../normalize.js';
+import { User } from '../../constants';
 import { createResolver } from '../createResolver';
+import { Collections } from '../normalize';
 
-type ResolveUsersParams = { limit?: number; offset?: number; };
+type ResolveUsersParams = {
+    limit?: number;
+    offset?: number;
+};
 
-export const resolveUsers = createResolver<ResolveUsersParams, Collections<User>>(() => ({}), {
+export const resolveUsers = createResolver<ResolveUsersParams, Collections<User, 'users'>>(() => ({}), {
     name: 'resolveUsers',
 });
 ```
 
 **Server** (`resolveUsers/index.server.ts`):
 ```typescript
-import { Collections, normalize } from '../normalize.js';
+import { User } from '../../constants';
 import { createResolver } from '../createResolver';
+import { normalize } from '../normalize';
 
-type ResolveUsersParams = { limit?: number; offset?: number; };
+type ResolveUsersParams = {
+    limit?: number;
+    offset?: number;
+};
 
 export const resolveUsers = createResolver<ResolveUsersParams, User>(
     async (ctx, params) => {
-        const users = await fetch('http://localhost:3001/users').then((r) => r.json());
-        const sliced = users.slice(params.offset ?? 0, (params.offset ?? 0) + (params.limit ?? users.length));
-        return normalize((user) => user.id)(sliced, 'users');
+        const users = await fetch('http://localhost:3001/users').then((response) => response.json());
+
+        const offset = params.offset ?? 0;
+        const limit = params.limit ?? users.length;
+        const sliced = users.slice(offset, offset + limit);
+
+        return normalize<User>((user) => user.id)(sliced, 'users');
     },
     { name: 'resolveUsers' }
 );
@@ -156,30 +247,49 @@ shared/src/resolver/resolveUser/
 
 **Client** (`resolveUser/index.client.ts`):
 ```typescript
-import { Collections } from '../normalize.js';
+import { User } from '../../constants';
 import { createResolver } from '../createResolver';
+import { Collections } from '../normalize';
 
-export type ResolveUserParams = { id: string };
+export type ResolveUserParams = {
+    id: string;
+};
 
-export const resolveUser = createResolver<ResolveUserParams, Collections<unknown>>(() => ({}), {
+export const resolveUser = createResolver<ResolveUserParams, Collections<User, 'users'>>(() => ({}), {
     name: 'resolveUser',
 });
 ```
 
 **Server** (`resolveUser/index.server.ts`):
 ```typescript
+import { z } from 'zod';
+
 import { User } from '../../constants';
 import { createResolver } from '../createResolver';
 import { normalize } from '../normalize';
 
-export type ResolveUserParams = { id: string };
+export const UserIdParamSchema = z.object({
+    id: z.string().min(1),
+});
+
+export type ResolveUserParams = {
+    id: string;
+};
 
 export const resolveUser = createResolver<ResolveUserParams, User>(
     async (ctx, params) => {
-        const { user } = await fetch(`http://localhost:3001/users/${params.id}`).then((r) => r.json());
-        return normalize((u) => u.id)([user], 'users');
+        const { user } = await fetch(`http://localhost:3001/users/${params.id}`).then((response) => response.json());
+
+        if (!user) {
+            return {
+                users: {},
+            };
+        }
+
+        return normalize<User>((user) => user.id)([user], 'users');
     },
-    { name: 'resolveUser' }
+    { name: 'resolveUser' },
+    UserIdParamSchema
 );
 ```
 
@@ -187,26 +297,27 @@ export const resolveUser = createResolver<ResolveUserParams, User>(
 
 Create a folder `shared/src/resolver/myResolver/` with three files:
 
-1. **`index.client.ts`** — Client stub:
+1. **`index.client.ts`** — Client stub (creates a resolver that will use batch endpoint):
    ```typescript
-   import { Collections } from '../normalize.js';
    import { createResolver } from '../createResolver';
 
    type MyParams = { filter?: string };
 
-   export const myResolver = createResolver<MyParams, Collections<unknown>>(() => ({}), {
+   export const myResolver = createResolver<MyParams, unknown>(() => ({}), {
        name: 'myResolver',
    });
    ```
 
+   > The client stub is identical for all resolvers. The `func` argument is a no-op — real logic runs on the server. Multiple calls to `myResolver()` in the same tick are automatically batched into a single HTTP request.
+
 2. **`index.server.ts`** — Server implementation:
    ```typescript
-   import { Collections, normalize } from '../normalize.js';
    import { createResolver } from '../createResolver';
+   import { normalize } from '../normalize';
 
    type MyParams = { filter?: string };
 
-   export const myResolver = createResolver<MyParams, Collections<{ id: string }>>(
+   export const myResolver = createResolver<MyParams, { id: string }>(
        async (ctx, params) => {
            const data = /* fetch from DB or API */;
            return normalize((item) => item.id)(data, 'myCollection');
@@ -217,9 +328,8 @@ Create a folder `shared/src/resolver/myResolver/` with three files:
 
 3. **`index.d.ts`** — Type declaration:
    ```typescript
-   import { Collections } from '../normalize.js';
    type MyParams = { filter?: string };
-   export declare const myResolver: (params: MyParams) => Promise<Collections<{ id: string }>>;
+   export declare const myResolver: (params: MyParams) => Promise<unknown>;
    ```
 
 4. Re-export from `shared/src/resolver/index.ts`:
@@ -228,6 +338,20 @@ Create a folder `shared/src/resolver/myResolver/` with three files:
    ```
 
 5. Rebuild: `pnpm --filter shared run build`
+
+### Batching Behavior
+
+Batching is **automatic and transparent** — no special setup is needed. When a controller or component calls multiple resolvers:
+
+```typescript
+// These two calls are automatically batched into one HTTP request
+const [users, user] = await Promise.all([
+    resolveUsers({ limit: 10 }),
+    resolveUser({ id: '5' }),
+]);
+```
+
+The batch is flushed on the next tick via `setTimeout(fn, 0)`. If only one resolver is called, a single-element batch request is sent.
 
 ## Resolver Batching (Client)
 
