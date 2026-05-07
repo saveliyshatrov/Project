@@ -115,6 +115,7 @@ coverageThreshold: {
 | `__tests__/src/WidgetShell.test.tsx` | 7 | Skeleton, controller data, collections, errors, rerender |
 | `__tests__/src/store.test.ts` | 2 | Store initialization, state shape |
 | `__tests__/src/config.test.ts` | 1 | Environment variable export |
+| `__tests__/src/connect.test.tsx` | 4 | WidgetProvider, connect HOC, scoped dispatch, useWidgetId |
 | `__tests__/src/components/UserList.test.tsx` | 1 | Component rendering |
 | `__tests__/src/components/UserDetail.test.tsx` | 1 | Component rendering |
 | `__tests__/src/widget/skeletons.test.tsx` | 2 | Skeleton component rendering |

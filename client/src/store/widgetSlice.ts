@@ -11,12 +11,7 @@ export const widgetSlice = createSlice({
     reducers: {
         updateWidgetData: (state, action: PayloadAction<{ id: string; data: Record<string, unknown> }>) => {
             const { id, data } = action.payload;
-            state[id] = state[id]
-                ? {
-                      ...state[id],
-                      data,
-                  }
-                : data;
+            state[id] = state[id] ? { ...state[id], ...data } : data;
         },
         clearWidgetData: (state, action: PayloadAction<string>) => {
             delete state[action.payload];

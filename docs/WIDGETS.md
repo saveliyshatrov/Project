@@ -11,7 +11,8 @@ client/src/utils/global/
 ├── index.tsx             ← createWidget factory + re-exports
 ├── WidgetShell.tsx       ← createWidgetShell factory
 ├── registry.ts           ← widget registry (sync + lazy)
-└── Slot.tsx              ← <Slot> rendering component
+├── Slot.tsx              ← <Slot> rendering component
+└── connect.tsx           ← WidgetProvider, connect HOC, useWidgetId, useWidgetDispatch
 
 client/src/widget/
 ├── UserList/
@@ -125,7 +126,7 @@ export const controller: ControllerFunction<ControllerData, Props, CollectionSta
 
 1. **Mount** → `showSkeleton = true`, `showNothing = false`
 2. **Fetch** → `controller({ ...props, ctx })` is called (once, via `useEffect`)
-3. **Success** → `data` merged into component props, `collections` dispatched to Redux, `showSkeleton = false` → renders View
+3. **Success** → `data` merged into component props, `collections` dispatched to Redux, controller return value stored in `widget` Redux slice under the widget's instance ID, `showSkeleton = false` → renders View
 4. **Empty result** → controller returns `null` → `showNothing = true` → renders `null`
 5. **Error** → `showSkeleton = false`, `showNothing = true` → renders `null`
 6. **Route change** → re-fetches when `location.pathname` changes
@@ -255,7 +256,7 @@ Stores both sync and lazy widget entries. `createWidget` registers widgets as la
 
 Located at `client/src/utils/global/Slot.tsx`.
 
-Renders a widget by name from the registry. Wraps lazy widgets in `<Suspense>` for loading state.
+Renders a widget by name from the registry. Each rendered widget instance gets a unique ID (`*Widget-{name}-{counter}`) and is wrapped in a `WidgetProvider` context, enabling private widget-scoped data access via the `connect` HOC. Wraps lazy widgets in `<Suspense>` for loading state.
 
 ### Usage
 
@@ -300,6 +301,142 @@ export default function App() {
         </Routes>
     );
 }
+```
+
+## Private Widget Store
+
+Each widget instance has access to a **private namespace** in the Redux `widget` slice, keyed by its unique instance ID. This allows widgets to store and retrieve data without colliding with other instances of the same widget on the same page.
+
+### widgetSlice
+
+Located at `client/src/store/widgetSlice.ts`.
+
+A Redux slice that holds widget-scoped data, keyed by instance ID:
+
+```typescript
+// State shape
+type WidgetSliceState = Record<string, Record<string, unknown>>;
+// Example: { "*Widget-UserListWidget-1": data, "*Widget-UserListWidget-2": data }
+```
+
+#### Actions
+
+| Action | Payload | Description |
+|--------|---------|-------------|
+| `updateWidgetData` | `{ id: string, data: Record<string, unknown> }` | Merges data into the widget's namespace |
+| `clearWidgetData` | `string` | Removes the widget's namespace entirely |
+
+### connect HOC
+
+Located at `client/src/utils/global/connect.tsx`.
+
+A higher-order component that maps a widget's private store data to its view component props, providing a scoped dispatch that only affects the widget's own namespace.
+
+```typescript
+connect<OwnProps, MappedProps>(
+    mapStateToProps: (widgetData, ownProps) => MappedProps
+): (Component) => ComponentType<OwnProps>
+```
+
+- `mapStateToProps` receives the widget's private data (empty object `{}` if no data exists) and the component's own props
+- Returns a new component that receives `mappedProps` plus a `dispatch` function
+
+#### Scoped Dispatch
+
+The `dispatch` injected by `connect` is scoped — it only writes to the calling widget's namespace. Calling `dispatch({ key: value })` dispatches `updateWidgetData` with the widget's instance ID, so data never leaks to other widgets.
+
+```tsx
+import { connect } from '@utils/global';
+
+type OwnProps = { initial?: string };
+type MappedProps = { value: string };
+
+const Inner = ({ value, dispatch }: MappedProps & { dispatch: (data: Record<string, unknown>) => void }) => (
+    <div>
+        <span>{value}</span>
+        <button onClick={() => dispatch({ value: 'updated' })}>Update</button>
+    </div>
+);
+
+const ConnectedInner = connect<OwnProps, MappedProps>(
+    (widgetData, ownProps) => ({
+        value: (widgetData.value as string) ?? ownProps.initial ?? 'default',
+    })
+)(Inner);
+```
+
+#### Outside WidgetProvider
+
+If `connect` is used on a component rendered **outside** a `WidgetProvider`, it returns empty widget data (`{}`) and a no-op dispatch. The component still renders without error.
+
+### Hooks
+
+All hooks are located at `client/src/utils/global/connect.tsx`.
+
+#### useWidgetId
+
+```typescript
+function useWidgetId(): string | null
+```
+
+Returns the current widget instance ID from context, or `null` if called outside a `WidgetProvider`.
+
+#### useWidgetDispatch
+
+```typescript
+type ScopedDispatch = (data: Record<string, unknown>) => void;
+function useWidgetDispatch(): ScopedDispatch | null
+```
+
+Returns a dispatch function scoped to the current widget instance. Calling it merges data into the widget's private Redux namespace. Returns `null` if called outside a `WidgetProvider`.
+
+### Example: Counter Widget
+
+```tsx
+// View component
+type CounterProps = { count: number } & { dispatch: (data: Record<string, unknown>) => void };
+
+const CounterView = ({ count, dispatch }: CounterProps) => (
+    <div>
+        <p>Count: {count}</p>
+        <button onClick={() => dispatch({ count: count + 1 })}>+</button>
+        <button onClick={() => dispatch({ count: count - 1 })}>-</button>
+    </div>
+);
+
+// Connected widget shell
+const ConnectedCounter = connect<Record<string, unknown>, { count: number }>(
+    (widgetData) => ({ count: (widgetData.count as number) ?? 0 })
+)(CounterView);
+
+export default createWidgetShell({
+    name: 'CounterWidget',
+    view: ConnectedCounter,
+    controller,
+});
+```
+
+Each `CounterWidget` instance on the page maintains its own count independently.
+
+### Data Flow
+
+```
+<Slot name="CounterWidget" />
+    │
+    ├── Slot generates instance ID (e.g. "*Widget-CounterWidget-1")
+    │
+    ▼
+<WidgetProvider id="*Widget-CounterWidget-1">
+    │
+    ├── WidgetShell stores controller data in widget slice via updateWidgetData
+    │
+    ▼
+<ConnectedCounter />   ← connect reads state.widget["*Widget-CounterWidget-1"]
+    │
+    ├── dispatch({ count: 5 }) → updateWidgetData({ id: "*Widget-CounterWidget-1", data: { count: 5 } })
+    │
+    ▼
+State updated → useSelector re-runs → connect re-maps props → View re-renders
 ```
 
 ## Adding a New Widget

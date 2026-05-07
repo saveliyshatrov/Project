@@ -110,14 +110,16 @@ client/
     ├── App.desktop.tsx       # Desktop-specific App
     ├── config.ts             # Environment flags
     ├── store/
-    │   ├── index.ts          # Redux store setup
-    │   └── collectionsSlice.ts  # Collections state slice
+    │   ├── index.ts          # Redux store setup (includes collections + widget reducers)
+    │   ├── collectionsSlice.ts  # Collections state slice
+    │   └── widgetSlice.ts    # Widget private data slice
     ├── utils/
     │   └── global/
     │       ├── index.tsx     # createWidget factory, re-exports
     │       ├── WidgetShell.tsx  # createWidgetShell factory
-    │       ├── Slot.tsx      # <Slot> component
-    │       └── registry.ts   # Widget registry (sync + lazy)
+    │       ├── Slot.tsx      # <Slot> component (wraps widgets in WidgetProvider)
+    │       ├── registry.ts   # Widget registry (sync + lazy)
+    │       └── connect.tsx   # WidgetProvider, connect HOC, useWidgetId, useWidgetDispatch
     └── widget/
         ├── UserList/
         │   ├── index.tsx     # Generated: createWidget() call

@@ -40,6 +40,10 @@ root (project)
 
 Client and server are isolated from each other — they only communicate through the shared package and HTTP.
 
+### Widget Private Store
+
+Each widget instance gets a private namespace in the Redux `widget` slice, created via `WidgetProvider` in `<Slot />`. Widgets access their private data through the `connect` HOC or `useWidgetDispatch` hook — updates are scoped to the instance's key (`*Widget-{name}-{counter}`) and never leak between instances.
+
 ## Package Responsibilities
 
 | Package | Role | Format |
@@ -102,6 +106,7 @@ Array response: [usersResult, userResult]
 Widget receives its result from the array
     ├── data → merged into component props
     ├── collections → dispatched to Redux store
+    ├── data also stored in widget slice under instance ID → available via connect HOC
     └── showSkeleton = false → renders View
 ```
 
