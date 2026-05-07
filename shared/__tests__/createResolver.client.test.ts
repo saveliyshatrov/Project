@@ -5,25 +5,35 @@ describe('createResolver (client)', () => {
 
     beforeEach(() => {
         global.fetch = jest.fn();
+        jest.useFakeTimers();
     });
 
     afterEach(() => {
         global.fetch = originalFetch;
+        jest.useRealTimers();
     });
 
-    it('makes a POST fetch request with resolver name in query and params in body', async () => {
+    it('sends batched request to /resolver/batch', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
-            json: async () => ({ users: { '1': { id: '1' } } }),
+            json: async () => [{ users: { '1': { id: '1' } } }],
         });
 
         const resolver = createResolver<any, any>(() => ({}), { name: 'testResolver' });
-        await resolver({ id: '1' });
+        const promise = resolver({ id: '1' });
 
-        expect(global.fetch).toHaveBeenCalledWith('/resolver?resolver=testResolver', {
+        jest.runAllTimers();
+        await Promise.resolve();
+
+        await promise;
+
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+        expect(global.fetch).toHaveBeenCalledWith('/resolver/batch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ params: { id: '1' } }),
+            body: JSON.stringify({
+                batch: [{ resolver: 'testResolver', params: { id: '1' } }],
+            }),
         });
     });
 
@@ -31,11 +41,16 @@ describe('createResolver (client)', () => {
         const responseData = { users: { '1': { id: '1' }, '2': { id: '2' } } };
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
-            json: async () => responseData,
+            json: async () => [responseData],
         });
 
         const resolver = createResolver<any, any>(() => ({}), { name: 'getUsers' });
-        const result = await resolver({});
+        const promise = resolver({});
+
+        jest.runAllTimers();
+        await Promise.resolve();
+
+        const result = await promise;
 
         expect(result).toEqual(responseData);
     });
@@ -43,42 +58,52 @@ describe('createResolver (client)', () => {
     it('throws error when response is not ok', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: false,
-            statusText: 'Not Found',
+            text: async () => 'Not Found',
         });
 
         const resolver = createResolver<any, any>(() => ({}), { name: 'missingResolver' });
+        const promise = resolver({});
 
-        await expect(resolver({})).rejects.toThrow('Resolver "missingResolver" failed: Not Found');
+        jest.runAllTimers();
+        await Promise.resolve();
+
+        await expect(promise).rejects.toThrow('Not Found');
     });
 
-    it('sends params in request body and resolver name in query', async () => {
+    it('sends params in batch entry', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
-            json: async () => ({}),
+            json: async () => [{}],
         });
 
         const resolver = createResolver<any, any>(() => ({}), { name: 'paramResolver' });
-        await resolver({ limit: 10, offset: 5 });
+        const promise = resolver({ limit: 10, offset: 5 });
+
+        jest.runAllTimers();
+        await Promise.resolve();
+
+        await promise;
 
         const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-        expect(fetchCall[0]).toBe('/resolver?resolver=paramResolver');
-        expect(fetchCall[1]).toMatchObject({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        });
+        expect(fetchCall[0]).toBe('/resolver/batch');
         expect(JSON.parse(fetchCall[1].body)).toEqual({
-            params: { limit: 10, offset: 5 },
+            batch: [{ resolver: 'paramResolver', params: { limit: 10, offset: 5 } }],
         });
     });
 
     it('handles sync option in options', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: true,
-            json: async () => ({ data: 'test' }),
+            json: async () => [{ data: 'test' }],
         });
 
         const resolver = createResolver<any, any>(() => ({}), { name: 'syncResolver', sync: true });
-        const result = await resolver({});
+        const promise = resolver({});
+
+        jest.runAllTimers();
+        await Promise.resolve();
+
+        const result = await promise;
 
         expect(result).toEqual({ data: 'test' });
     });

@@ -59,8 +59,7 @@ app.use(express.json());
 
 app.use('/resolver', async (req, res) => {
     try {
-        const query = new URLSearchParams(req.query as Record<string, string>);
-        const response = await fetch(`${API_URL}/resolver?${query.toString()}`, {
+        const response = await fetch(`${API_URL}${req.originalUrl}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(req.body),

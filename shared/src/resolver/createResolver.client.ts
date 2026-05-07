@@ -1,4 +1,5 @@
 import { Collections } from './normalize.js';
+import { enqueueResolverCall } from './resolverBatch';
 import { ErrorType } from './types';
 
 export type ResolverOptions = {
@@ -23,16 +24,6 @@ export function createResolver<Params, CollectionType>(
     options: ResolverOptions
 ): Runner<Params, CollectionType> {
     return async (params: Params) => {
-        const response = await fetch(`/resolver?resolver=${options.name}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ params }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Resolver "${options.name}" failed: ${response.statusText}`);
-        }
-
-        return (await response.json()) as Collections<CollectionType, string> | ErrorType;
+        return enqueueResolverCall(options.name, params) as Promise<Collections<CollectionType, string> | ErrorType>;
     };
 }

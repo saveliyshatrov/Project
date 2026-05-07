@@ -229,6 +229,63 @@ Create a folder `shared/src/resolver/myResolver/` with three files:
 
 5. Rebuild: `pnpm --filter shared run build`
 
+## Resolver Batching (Client)
+
+Multiple resolver calls within the same tick are **automatically batched** into a single HTTP request on the client side. This eliminates redundant network round-trips when several resolvers are called together.
+
+### How It Works
+
+```
+Controller                          Server
+────────                          ──────
+resolveUsers({ limit: 10 })       resolveUsers()
+resolveUser({ id: '5' })          resolveUser()
+    │                                  │
+    ├── batched together ────────────► │
+    │   POST /resolver/batch           │
+    │   { batch: [...] }               │
+    │                                  ├──► execute all resolvers
+    │                                  │    (in parallel via Promise.all)
+    │                                  └──► return array of results
+    │◄─────────────────────────────────┤
+    └── each promise resolved ────────┘
+```
+
+### Implementation Details
+
+- Resolver calls are queued via `setTimeout(fn, 0)` and flushed in the next tick
+- All queued resolvers are sent as a single `POST /resolver/batch` request
+- The server executes them in parallel (`Promise.all`) and returns an ordered array
+- Each client-side promise resolves with its corresponding result from the array
+
+### Batch Endpoint
+
+`POST /resolver/batch`
+
+**Request body (JSON):**
+```json
+{
+    "batch": [
+        { "resolver": "resolveUsers", "params": { "limit": 10 } },
+        { "resolver": "resolveUser", "params": { "id": "5" } }
+    ]
+}
+```
+
+**Response:**
+```json
+[
+    { "users": { "1": { ... }, "2": { ... } } },
+    { "users": { "5": { ... } } }
+]
+```
+
+Responses are returned in the same order as the batch entries.
+
+### Error Handling
+
+If one resolver in the batch fails, its entry in the response array contains an `error` field. Other resolvers still execute normally. If the entire HTTP request fails, all batched promises reject.
+
 ## Resolver Endpoint
 
 `POST /resolver?resolver=resolveUsers`

@@ -32,4 +32,32 @@ router.post(
     }
 );
 
+router.post('/resolver/batch', async (req: Request, res: Response) => {
+    const { batch } = req.body as { batch?: Array<{ resolver: string; params?: Record<string, unknown> }> };
+
+    if (!Array.isArray(batch)) {
+        res.status(400).json({ error: 'batch must be an array' });
+        return;
+    }
+
+    const results = await Promise.all(
+        batch.map(async ({ resolver, params }) => {
+            const entry = resolverRegistry.get(resolver);
+            if (!entry) {
+                return { error: `Resolver "${resolver}" not found` };
+            }
+
+            try {
+                return await entry.func({ isServer: true }, params ?? {});
+            } catch (error) {
+                return {
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                };
+            }
+        })
+    );
+
+    res.json(results);
+});
+
 export default router;
