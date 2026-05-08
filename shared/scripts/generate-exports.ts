@@ -52,6 +52,6 @@ for (const entry of entries) {
 }
 
 pkg.exports = exports;
-fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 4) + '\n');
 
 console.log('Generated exports:', Object.keys(exports));
