@@ -1,5 +1,5 @@
+import { Link } from '@utils/global/routes';
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { formatUser } from 'shared';
 
 import type { Props } from './index';

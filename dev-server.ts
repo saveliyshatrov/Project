@@ -83,10 +83,11 @@ app.get('{*splat}', async (req, res) => {
     try {
         const _require = createRequire(import.meta.url);
 
-        const serverEntry: { render: (url: string) => { html: string; state: Record<string, unknown> } } =
-            _require(ssrBundlePath);
+        const serverEntry: {
+            render: (url: string) => Promise<{ html: string; state: Record<string, unknown> }>;
+        } = _require(ssrBundlePath);
 
-        const { html: bodyHtml, state } = serverEntry.render(req.originalUrl);
+        const { html: bodyHtml, state } = await serverEntry.render(req.originalUrl);
 
         const fullHtml = `<!DOCTYPE html>
 <html lang="en">

@@ -46,18 +46,25 @@ const config: webpack.Configuration = {
             'process.env.PLATFORM': JSON.stringify('server'),
         }),
     ],
-    externals: {
-        react: 'commonjs react',
-        'react-dom': 'commonjs react-dom',
-        'react-dom/server': 'commonjs react-dom/server',
-        'react-redux': 'commonjs react-redux',
-        'react-router': 'commonjs react-router',
-        'react-router-dom': 'commonjs react-router-dom',
-        '@reduxjs/toolkit': 'commonjs @reduxjs/toolkit',
-        redux: 'commonjs redux',
-        immer: 'commonjs immer',
-        shared: 'commonjs shared',
-    },
+    externals: [
+        {
+            react: 'commonjs react',
+            'react-dom': 'commonjs react-dom',
+            'react-dom/server': 'commonjs react-dom/server',
+            'react-redux': 'commonjs react-redux',
+            'react-router': 'commonjs react-router',
+            'react-router-dom': 'commonjs react-router-dom',
+            '@reduxjs/toolkit': 'commonjs @reduxjs/toolkit',
+            redux: 'commonjs redux',
+            immer: 'commonjs immer',
+        },
+        ({ request }, callback) => {
+            if (/^shared(\/.*)?$/.test(request)) {
+                return callback(null, 'commonjs ' + request);
+            }
+            callback();
+        },
+    ],
     externalsPresets: { node: true },
     optimization: {
         minimize: false,

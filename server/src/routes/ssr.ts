@@ -10,16 +10,12 @@ router.get('{*splat}', async (req, res) => {
     try {
         const bundlePath = path.resolve(__dirname, '../../../client/dist/server/serverEntry.cjs');
 
-        let serverEntry: { render: (url: string) => { html: string; state: Record<string, unknown> } };
-        try {
+        const serverEntry: {
+            render: (url: string) => Promise<{ html: string; state: Record<string, unknown> }>;
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            serverEntry = require(bundlePath);
-        } catch {
-            res.status(500).json({ error: 'SSR bundle not found. Run `pnpm build:ssr` first.' });
-            return;
-        }
+        } = require(bundlePath);
 
-        const { html: bodyHtml, state } = serverEntry.render(req.originalUrl);
+        const { html: bodyHtml, state } = await serverEntry.render(req.originalUrl);
 
         const device = getDeviceType(req);
 
