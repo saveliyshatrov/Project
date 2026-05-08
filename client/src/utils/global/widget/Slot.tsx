@@ -1,4 +1,6 @@
-import React, { Suspense } from 'react';
+import { clearWidgetData } from '@store/widget';
+import React, { Suspense, useEffect, useLayoutEffect } from 'react';
+import { useDispatch } from 'react-redux';
 
 import { WidgetProvider } from './connect';
 import { getWidget, hasWidget } from './registry';
@@ -11,8 +13,23 @@ type SlotProps = {
     fallback?: React.ReactNode;
 };
 
+const createWidgetUniqName = (name: string) => {
+    return `*Widget-${name}-${++instanceCounter}`;
+};
+
 export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
-    const [widgetInstanceId] = React.useState(() => `*Widget-${name}-${++instanceCounter}`);
+    const [widgetInstanceId, updateInstance] = React.useState(createWidgetUniqName(name));
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        updateInstance(createWidgetUniqName(name));
+    }, [name]);
+
+    useLayoutEffect(() => {
+        return () => {
+            dispatch(clearWidgetData(widgetInstanceId));
+        };
+    }, [name]);
 
     const Widget = getWidget(name);
 
@@ -21,11 +38,11 @@ export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
     }
 
     return (
-        <WidgetProvider id={widgetInstanceId}>
-            <Suspense fallback={fallback}>
+        <Suspense fallback={fallback}>
+            <WidgetProvider id={widgetInstanceId}>
                 <Widget {...props} />
-            </Suspense>
-        </WidgetProvider>
+            </WidgetProvider>
+        </Suspense>
     );
 };
 
