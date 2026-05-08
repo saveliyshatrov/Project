@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { DeviceType } from 'shared/utils/getDeviceType';
 
-function getDeviceType(req: Request): DeviceType {
+export const getDeviceType = (req: Request): DeviceType => {
     if (req.useragent?.isMobile) return DeviceType.mobile;
     return DeviceType.desktop;
-}
+};
 
 const router = Router();
 
