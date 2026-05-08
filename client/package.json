@@ -7,6 +7,7 @@
         "prebuild": "pnpm exec tsx scripts/generate-widget-entries.ts",
         "dev": "cd .. && pnpm exec tsx dev-server.ts",
         "build": "pnpm run prebuild && webpack --mode production --config ../webpack.client.prod.config.ts",
+        "build:ssr": "pnpm run prebuild && webpack --mode production --config ../webpack.server.config.ts",
         "build:mobile": "pnpm run prebuild && webpack --mode production --config ../webpack.client.prod.config.ts --config-name mobile",
         "build:desktop": "pnpm run prebuild && webpack --mode production --config ../webpack.client.prod.config.ts --config-name desktop",
         "test": "jest --config jest.config.ts",

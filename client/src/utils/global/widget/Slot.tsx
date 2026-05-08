@@ -32,3 +32,7 @@ export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
 export function isWidgetRegistered(name: string): boolean {
     return hasWidget(name);
 }
+
+export function resetInstanceCounter(): void {
+    instanceCounter = 0;
+}

@@ -21,6 +21,9 @@ type WidgetParams = {
 
 export const createWidget = ({ name, loader }: WidgetParams) => {
     registerWidgetLazy(name, loader);
+    if (process.env.SSR) {
+        return null;
+    }
     return React.lazy(loader);
 };
 
