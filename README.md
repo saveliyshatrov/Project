@@ -14,6 +14,11 @@ Full-stack monorepo with a React frontend, Express backend, and shared type-safe
 [![Prettier](https://img.shields.io/badge/Prettier-3.5-F7B93E?logo=prettier)](https://prettier.io/)
 [![Zod](https://img.shields.io/badge/Zod-4.4.3-blue?logo=zod)](https://zod.dev/)
 
+## Build your own fullstack app
+```bash
+npx create-pfp-app
+```
+
 ## Quick Start
 
 ```bash
