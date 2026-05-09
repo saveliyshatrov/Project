@@ -13,6 +13,7 @@
         "build": "pnpm --filter shared run build && pnpm --filter client run build && pnpm --filter server run build",
         "build:client": "pnpm --filter client run build",
         "build:server": "pnpm --filter server run build",
+        "build:ssr": "pnpm --filter client run build:ssr",
         "start": "pnpm --filter server run start",
         "clear": "pnpm run clear:dist && pnpm run clear:modules",
         "clear:dist": "rm -rf ./client/dist ./server/dist ./shared/dist",

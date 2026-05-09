@@ -60,6 +60,9 @@ export function createWidgetShell<
         const [searchParams] = useSearchParams();
         const widgetId = useWidgetId();
         const rerenderVersion = useSelector((state: RootState) => state.widgets.rerenderVersions[name] ?? 0);
+        const existingWidgetData = useSelector((state: RootState) =>
+            widgetId ? state.widget[widgetId] : undefined
+        ) as Partial<ViewProps> | undefined;
 
         const ctx: WidgetCtx<Params> = {
             page: {
@@ -75,8 +78,23 @@ export function createWidgetShell<
         const controllerRef = React.useRef(controller);
         controllerRef.current = controller;
 
+        const isHydrated = React.useRef(false);
+
         /* eslint-disable react-hooks/exhaustive-deps */
         React.useEffect(() => {
+            console.log({
+                isHydrated: isHydrated.current,
+                existingWidgetData,
+                widgetId,
+            });
+            if (!isHydrated.current && existingWidgetData) {
+                setControllerData(existingWidgetData);
+                setShowSkeleton(false);
+                isHydrated.current = true;
+                return;
+            }
+
+            isHydrated.current = true;
             setShowSkeleton(true);
             setShowNothing(false);
             controllerRef
