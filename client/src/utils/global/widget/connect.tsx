@@ -1,48 +1,11 @@
-import type { RootState, AppDispatch } from '@store';
-import { updateWidgetData } from '@store/widget';
-import React, { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '@store';
+import React from 'react';
+import { useSelector } from 'react-redux';
 
-const WidgetContext = React.createContext<string | null>(null);
+import { useWidgetId, useWidgetDispatch } from './context';
+import { UpdateWidgetData, ScopedDispatchProps, MapStateToProps } from './types';
 
-export function WidgetProvider({ id, children }: { id: string; children: React.ReactNode }) {
-    return <WidgetContext.Provider value={id}>{children}</WidgetContext.Provider>;
-}
-
-export function useWidgetId(): string | null {
-    return React.useContext(WidgetContext);
-}
-
-type Data = Record<string, unknown>;
-
-type ScopedDispatch = (data: Data) => void;
-
-export function useWidgetDispatch(): ScopedDispatch | null {
-    const dispatch = useDispatch<AppDispatch>();
-    const widgetId = useWidgetId();
-
-    const customDispatch = useCallback(
-        (data: Data) => {
-            if (widgetId) {
-                dispatch(updateWidgetData({ id: widgetId, data }));
-            }
-        },
-        [dispatch, widgetId]
-    );
-
-    if (!widgetId) return null;
-
-    return customDispatch;
-}
-
-type ScopedDispatchProps<MappedProps extends Data> = React.ComponentType<MappedProps & { dispatch: ScopedDispatch }>;
-
-type MapStateToProps<OwnProps extends Data, MappedProps extends Data> = (
-    widgetData: Data,
-    ownProps: OwnProps
-) => MappedProps;
-
-export function connect<OwnProps extends Data, MappedProps extends Data>(
+export function connect<OwnProps extends UpdateWidgetData, MappedProps extends UpdateWidgetData>(
     mapStateToProps: MapStateToProps<OwnProps, MappedProps>
 ): (Component: ScopedDispatchProps<MappedProps>) => React.ComponentType<OwnProps> {
     return (Component: ScopedDispatchProps<MappedProps>) => {

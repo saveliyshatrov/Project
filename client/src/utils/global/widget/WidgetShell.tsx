@@ -5,7 +5,7 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useParams, useSearchParams } from 'react-router';
 
-import { useWidgetId } from './connect';
+import { useWidgetId } from './context';
 
 type ParamsType = Record<string, string | undefined>;
 

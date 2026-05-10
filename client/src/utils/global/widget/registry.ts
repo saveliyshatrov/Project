@@ -1,17 +1,14 @@
 import React from 'react';
 
-type WidgetLoader = () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>;
+import { WidgetName, WidgetLoader, WidgetEntry, WidgetComponentType } from './types';
 
-type WidgetEntry =
-    | { type: 'sync'; component: React.ComponentType<Record<string, unknown>> }
-    | { type: 'lazy'; loader: WidgetLoader };
+const widgetRegistry: Record<WidgetName, WidgetEntry> = {};
 
-const widgetRegistry: Record<string, WidgetEntry> = {};
-const lazyCache: Record<string, React.LazyExoticComponent<React.ComponentType<Record<string, unknown>>>> = {};
+const lazyCache: Record<string, React.LazyExoticComponent<WidgetComponentType>> = {};
 
 export function registerWidget(
-    name: string,
-    entry: { component: React.ComponentType<Record<string, unknown>>; displayName?: string }
+    name: WidgetName,
+    entry: { component: WidgetComponentType; displayName?: string }
 ): void {
     if (widgetRegistry[name]) {
         console.warn(`[WidgetRegistry] Widget "${name}" is already registered, overwriting.`);
@@ -19,7 +16,7 @@ export function registerWidget(
     widgetRegistry[name] = { type: 'sync', component: entry.component };
 }
 
-export function registerWidgetLazy(name: string, loader: WidgetLoader): void {
+export function registerWidgetLazy(name: WidgetName, loader: WidgetLoader): void {
     if (widgetRegistry[name]) {
         console.warn(`[WidgetRegistry] Widget "${name}" is already registered, overwriting.`);
     }
@@ -27,11 +24,8 @@ export function registerWidgetLazy(name: string, loader: WidgetLoader): void {
 }
 
 export function getWidget(
-    name: string
-):
-    | React.ComponentType<Record<string, unknown>>
-    | React.LazyExoticComponent<React.ComponentType<Record<string, unknown>>>
-    | null {
+    name: WidgetName
+): WidgetComponentType | React.LazyExoticComponent<WidgetComponentType> | null {
     const entry = widgetRegistry[name];
     if (!entry) return null;
     if (entry.type === 'sync') return entry.component;
@@ -47,7 +41,7 @@ export function hasWidget(name: string): boolean {
 
 export function clearWidgetRegistry(): void {
     for (const key of Object.keys(widgetRegistry)) {
-        delete widgetRegistry[key];
+        delete widgetRegistry[key as WidgetName];
     }
     for (const key of Object.keys(lazyCache)) {
         delete lazyCache[key];
