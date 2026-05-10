@@ -10,7 +10,7 @@ import { WidgetErrorBoundary } from './widgetErrorBoundary';
 let instanceCounter = 0;
 
 type SlotProps = {
-    name: WidgetName;
+    name: string;
     props?: Record<string, unknown>;
     fallback?: React.ReactNode;
 };
@@ -20,15 +20,18 @@ const createWidgetUniqName = (name: WidgetName) => {
 };
 
 export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
-    const [widgetInstanceId, updateInstance] = React.useState(createWidgetUniqName(name));
+    const [widgetInstanceId, updateInstance] = React.useState(createWidgetUniqName(name as WidgetName));
     const dispatch = useDispatch();
 
-    const clearData = useCallback((widgetInstanceId: WidgetId) => {
-        dispatch(clearWidgetData(widgetInstanceId));
-    }, []);
+    const clearData = useCallback(
+        (widgetInstanceId: WidgetId) => {
+            dispatch(clearWidgetData(widgetInstanceId));
+        },
+        [dispatch]
+    );
 
     useEffect(() => {
-        updateInstance(createWidgetUniqName(name));
+        updateInstance(createWidgetUniqName(name as WidgetName));
     }, [name]);
 
     useLayoutEffect(() => {
@@ -37,7 +40,7 @@ export const Slot = ({ name, props = {}, fallback = null }: SlotProps) => {
         };
     }, [name]);
 
-    const Widget = getWidget(name);
+    const Widget = getWidget(name as WidgetName);
 
     if (!Widget) {
         return <>{fallback}</>;
