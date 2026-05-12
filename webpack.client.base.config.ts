@@ -45,7 +45,7 @@ export function createClientConfig(
         resolve: {
             extensions: [`${platformSuffix}.tsx`, `${platformSuffix}.ts`, '.tsx', '.ts', '.js', '.jsx', '.json'],
             plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(clientRoot, 'tsconfig.json') })],
-            symlinks: false,
+            symlinks: true,
         },
         module: {
             rules: [
